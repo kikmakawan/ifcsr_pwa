@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IFCSR">
+<meta name="theme-color" content="#d6171f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>IFCSR - In-Flight Commercial Sales Report</title>
+<style>
+:root{--red:#d6171f;--yellow:#ffc72c;--bg:#f2f2f5;--card:#fff;--text:#222;--border:#e2e2e6;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);padding-bottom:64px;font-size:16px;}
+header{background:var(--red);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:5;}
+header h1{margin:0;font-size:1rem;}
+header .sub{font-size:.72rem;opacity:.85;}
+.wrap{max-width:720px;margin:0 auto;padding:10px;}
+.card{background:var(--card);border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+h2{font-size:.95rem;margin:0 0 8px;color:var(--red);}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;}
+label{font-size:.7rem;color:#666;display:block;margin-bottom:2px;}
+input[type=text],input[type=date],select{width:100%;padding:9px 8px;border:1px solid var(--border);border-radius:8px;font-size:1rem;background:#fff;}
+.segment{display:flex;gap:6px;margin:6px 0 4px;}
+.segment button{flex:1;padding:10px 4px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:.82rem;font-weight:600;color:#555;}
+.segment button.active{background:var(--red);color:#fff;border-color:var(--red);}
+details{margin:8px 0;border-radius:10px;overflow:hidden;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+summary{cursor:pointer;padding:12px 14px;font-weight:700;background:linear-gradient(135deg,var(--yellow),#ffb300);list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:.9rem;}
+summary::-webkit-details-marker{display:none;}
+summary .tot{font-weight:700;color:var(--red);font-size:.82rem;white-space:nowrap;}
+.itemcard{padding:10px 12px;border-bottom:1px solid var(--border);}
+.itemcard:last-child{border-bottom:none;}
+.itemhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.itemname{font-weight:700;font-size:.85rem;}
+.par{font-size:.7rem;color:#999;}
+.tierrow{display:flex;align-items:center;gap:6px;margin:5px 0;flex-wrap:wrap;}
+.actualrow{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 10px;margin:6px 0 8px;flex-wrap:wrap;}
+.actuallabel{font-weight:700;font-size:.82rem;color:#8a5a00;}
+.actualsub{font-weight:400;font-size:.68rem;color:#a37a2e;display:block;}
+.actualrow .qtyinput{background:#fff;border-color:#ffca28;font-weight:700;}
+.tierlabel{font-size:.75rem;color:#555;min-width:118px;flex:1 1 118px;}
+.tierlabel b{color:var(--red);}
+.qtygrp{display:flex;align-items:center;gap:3px;}
+.qtygrp .sub{font-size:.65rem;color:#999;width:28px;}
+.stepbtn{width:34px;height:34px;border:1px solid var(--border);background:#f6f6f6;border-radius:7px;font-size:1.1rem;font-weight:700;color:var(--red);line-height:1;}
+.qtyinput{width:46px;height:34px;text-align:center;border:1px solid var(--border);border-radius:7px;font-size:1rem;padding:0;}
+.rowtot{font-size:.72rem;color:var(--red);font-weight:700;margin-left:auto;}
+.sectot{padding:10px 12px;text-align:right;font-weight:700;color:var(--red);border-top:1px solid var(--border);background:#fafafa;font-size:.85rem;}
+.btnbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:8px;display:flex;gap:8px;z-index:6;}
+button.main{flex:1;padding:12px;border:none;border-radius:10px;font-weight:700;font-size:.85rem;}
+.b-save{background:var(--red);color:#fff;}
+.b-reset{background:#eee;color:#444;}
+.b-summary{background:var(--yellow);color:#222;}
+.note{font-size:.72rem;color:#888;padding:4px 2px;}
+.grandcard{background:linear-gradient(135deg,var(--red),#a30f14);color:#fff;}
+.grandcard h2{color:#fff;}
+.grandrow{display:flex;justify-content:space-between;padding:5px 0;font-size:.85rem;border-bottom:1px dashed rgba(255,255,255,.3);}
+.grandrow b{font-size:1.05rem;}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:9;padding:16px;}
+#modal .box{background:#fff;border-radius:10px;padding:16px;max-width:500px;max-height:80vh;overflow:auto;width:100%;}
+#modal pre{white-space:pre-wrap;font-size:.8rem;}
+.closeM{float:right;background:#eee;border-radius:6px;padding:4px 10px;}
+.sumtop{font-size:.78rem;background:#fafafa;border-radius:8px;padding:8px 10px;margin-bottom:8px;}
+.sumsection{margin:10px 0;}
+.sumsection h3{font-size:.85rem;color:var(--red);margin:0 0 4px;border-bottom:1px solid var(--border);padding-bottom:3px;}
+.sumitem{font-size:.78rem;padding:4px 2px;border-bottom:1px dashed #eee;}
+.sumempty{font-size:.82rem;color:#999;padding:16px 4px;text-align:center;}
+.seatcard{padding:10px 12px;border-bottom:1px solid var(--border);}
+.searchcard{border:2px solid var(--yellow);}
+#itemSearch{width:100%;padding:12px 10px;border:1px solid var(--border);border-radius:9px;font-size:1rem;margin-top:2px;}
+#searchResults{margin-top:8px;max-height:60vh;overflow-y:auto;}
+.searchrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.searchrow:last-child{border-bottom:none;}
+.searchinfo{flex:1 1 140px;min-width:0;}
+.searchname{font-weight:700;font-size:.82rem;display:block;}
+.searchmeta{font-size:.68rem;color:#888;}
+.searchtag{display:inline-block;background:#f0f0f0;border-radius:5px;padding:1px 6px;font-size:.65rem;color:#666;margin-left:4px;}
+.searchopen{font-size:.68rem;color:var(--red);font-weight:700;background:none;border:none;padding:4px;white-space:nowrap;}
+.searchempty{font-size:.78rem;color:#999;padding:8px 4px;}
+.menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.menubtn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px 10px;border:1px solid var(--border);border-radius:10px;background:linear-gradient(135deg,#fff,#fafafa);text-align:left;}
+.menubtn:active{background:linear-gradient(135deg,var(--yellow),#ffb300);}
+.menuname{font-weight:700;font-size:.82rem;color:#333;}
+.menutot{font-weight:700;font-size:.78rem;color:var(--red);}
+.modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:8;}
+.modalOverlay.open{display:flex;}
+.modalSheet{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:720px;max-height:88vh;overflow-y:auto;padding-bottom:16px;}
+.modalHeaderBar{position:sticky;top:0;background:var(--red);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:700;border-radius:16px 16px 0 0;z-index:1;}
+.modalHeaderBar .closeM{background:rgba(255,255,255,.2);color:#fff;border-radius:6px;padding:4px 10px;font-weight:600;float:none;}
+.subdet{margin-top:6px;border:1px dashed var(--border);border-radius:8px;background:#fcfcfc;}
+.subdet summary{background:none;padding:6px 8px;font-size:.72rem;font-weight:600;color:#888;}
+.subdet .tierrow{padding:0 8px;}
+.subdet .note{padding:4px 8px 6px;font-size:.7rem;}
+.priceInput{width:58px;height:26px;text-align:center;border:1px solid var(--border);border-radius:6px;font-size:.78rem;padding:0 2px;margin-left:2px;color:var(--red);font-weight:700;}
+.delBtn{background:#ffebee;color:#c62828;border:none;border-radius:6px;padding:3px 8px;font-size:.68rem;font-weight:700;margin-left:6px;white-space:nowrap;}
+.customtag{display:inline-block;background:#fff3cd;color:#8a5a00;border-radius:5px;padding:1px 6px;font-size:.62rem;font-weight:700;margin-left:4px;}
+.sumActions{display:flex;gap:8px;margin-bottom:10px;}
+.b-backup{background:#eee;color:#444;text-align:center;}
+@media print{
+ body.printMode > header, body.printMode > .wrap, body.printMode > .btnbar{display:none !important;}
+ body.printMode #modal{position:static !important;background:#fff !important;display:block !important;padding:0 !important;inset:auto !important;}
+ body.printMode #modal .box{box-shadow:none !important;max-height:none !important;overflow:visible !important;max-width:100% !important;border-radius:0 !important;}
+ body.printMode .closeM, body.printMode .sumActions{display:none !important;}
+}
+</style>
+</head>
+<body>
+<header><h1>✈️ IFCSR - In-Flight Commercial Sales Report</h1><div class="sub">ออฟไลน์ 100% • ข้อมูลเก็บในเครื่องนี้เท่านั้น</div></header>
+<div class="wrap">
+
+<div class="card searchcard">
+<h2>🔎 ค้นหาชื่อของ (กดนับได้เลย)</h2>
+<input type="text" id="itemSearch" placeholder="พิมพ์ชื่อสินค้า เช่น coke, latte, t-shirt..." autocomplete="off" oninput="doSearch(this.value)">
+<div id="searchResults"></div>
+</div>
+
+<div class="card">
+<h2>ประเภทเที่ยวบิน (เลือกก่อนเริ่มกรอก)</h2>
+<div class="segment" id="flightSeg">
+ <button data-v="DOM">ในประเทศ</button>
+ <button data-v="INT">ต่างประเทศ</button>
+ <button data-v="BOTH">ผสม (DOM+INT)</button>
+</div>
+</div>
+
+<div class="card">
+<h2>ข้อมูลเที่ยวบิน</h2>
+<div class="grid" id="hdrGrid"></div>
+</div>
+
+<div class="card">
+<h2>Seal Number</h2>
+<div class="grid" id="sealGrid"></div>
+</div>
+
+<div class="card">
+<h2>นับของแต่ละหมวด (กดเปิดทีละหมวด)</h2>
+<div class="menu-grid" id="menuGrid"></div>
+</div>
+
+<div class="card">
+<h2>➕ เพิ่มรายการสินค้าใหม่ / เมนูอัปเดต</h2>
+<div class="grid">
+<div><label>หมวดหมู่</label><select id="newItemSec"></select></div>
+<div><label>ชื่อสินค้า</label><input type="text" id="newItemName" placeholder="ชื่อสินค้า"></div>
+<div><label>Par</label><input type="text" inputmode="numeric" id="newItemPar" value="0"></div>
+<div><label>ราคา (บาท)</label><input type="text" inputmode="decimal" id="newItemPrice" value="0"></div>
+</div>
+<button type="button" class="main b-save" style="margin-top:8px;width:100%;" onclick="addCustomItem()">เพิ่มรายการ</button>
+<div class="note">รายการที่เพิ่มเองจะไปอยู่ในหมวดที่เลือก ค้นหาเจอได้เหมือนรายการเดิมทุกอย่าง และลบออกได้จากในหมวดนั้น (ปุ่ม "ลบ ✕")</div>
+</div>
+
+<div id="itemModal" class="modalOverlay" onclick="if(event.target===this) closeItemModal()">
+ <div class="modalSheet">
+  <div class="modalHeaderBar"><span id="itemModalTitle">หมวด</span><span class="closeM" onclick="closeItemModal()">ปิด ✕</span></div>
+  <div id="itemModalBody"></div>
+ </div>
+</div>
+
+<div class="card">
+<h2>เงินสดรับ & Voucher</h2>
+<div class="grid">
+<div><label>THB รับมา</label><input type="text" inputmode="numeric" id="cashTHB" value="0"></div>
+<div><label>สกุลอื่น (เทียบบาทแล้ว)</label><input type="text" inputmode="numeric" id="cashOther" value="0"></div>
+<div><label>Cash Voucher (140 THB) จำนวน</label><input type="text" inputmode="numeric" id="voucherQty" value="0"></div>
+</div>
+<div class="note" id="voucherNote"></div>
+</div>
+
+<div class="card grandcard">
+<h2>สรุปยอดรวม</h2>
+<div class="grandrow"><span>① Merchandise Total</span><b id="gMerch">0</b></div>
+<div class="grandrow"><span>② Seats Total</span><b id="gSeat">0</b></div>
+<div class="grandrow"><span>③ F&amp;B Total</span><b id="gFB">0</b></div>
+<div class="grandrow"><span>④ Cash Voucher Total (หัก)</span><b id="gVoucher">0</b></div>
+<div class="grandrow" style="border:none;font-size:1.1rem;margin-top:6px;"><span>Grand Total (①+②+③−④)</span><b id="gGrand">0</b></div>
+</div>
+
+<div class="note">หมายเหตุ: แต่ละรายการมีปุ่ม "สต๊อก / Defect / Sky Boss / PBM / Crew ▾" ซ่อนไว้ด้านล่าง กดเพื่อกรอก Actual (ของที่ใช้จากสต๊อกจริง) + Defect/SkyBoss/PBM/Crew — ระบบจะโชว์ "เหลือ" (Par−Actual) และเช็คให้อัตโนมัติว่ายอดขาย+Defect+SkyBoss+PBM+Crew ตรงกับ Actual หรือไม่ เพื่อเช็คสต๊อกตอนเครื่องแลนด์</div>
+
+</div>
+
+<div class="card">
+<h2>💾 สำรองข้อมูล / ย้ายไปใช้เครื่องใหม่</h2>
+<div class="note">ข้อมูลทั้งหมด (ราคาที่แก้ไว้ + รายการที่เพิ่มเอง + ข้อมูลเที่ยวบินปัจจุบัน) เก็บอยู่ในเครื่อง/เบราว์เซอร์นี้เท่านั้น ถ้าจะเปลี่ยนเครื่องหรือเปลี่ยนเบราว์เซอร์ ให้กด "Export" เก็บไฟล์ไว้ก่อน แล้วเอาไฟล์นั้นไปกด "Import" ที่เครื่องใหม่ (ต้องมีไฟล์แอปตัวนี้อยู่ที่เครื่องใหม่ด้วย)</div>
+<div style="display:flex;gap:8px;margin-top:8px;">
+<button type="button" class="main b-backup" onclick="exportBackup()">⬇️ Export Backup</button>
+<label class="main b-backup" style="display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0;">📥 Import Backup<input type="file" accept=".json,application/json" style="display:none" onchange="importBackup(this.files[0])"></label>
+</div>
+<div class="note" style="margin-top:8px;">ต้องการเริ่มใหม่หมดจริงๆ รวมเมนู/ราคาที่แก้ไว้ด้วย? <span style="color:#c62828;font-weight:700;cursor:pointer;text-decoration:underline;" onclick="resetEverything()">ล้างทั้งหมดรวมเมนู</span></div>
+</div>
+
+<div class="btnbar">
+<button class="main b-reset" onclick="resetAll()">ล้าง</button>
+<button class="main b-summary" onclick="showSummary()">สรุป</button>
+<button class="main b-save" onclick="saveAll()">บันทึก</button>
+</div>
+
+<div id="modal"><div class="box"><span class="closeM" onclick="document.getElementById('modal').style.display='none'">ปิด ✕</span><h2>สรุปรายงาน</h2>
+<div class="sumActions"><button type="button" class="main" style="background:var(--yellow);color:#222;" onclick="printSummary()">📄 บันทึกเป็น PDF</button><button type="button" class="main" style="background:#eee;color:#444;" onclick="downloadSummaryImage()">🖼️ บันทึกเป็นรูปภาพ</button></div>
+<div id="sumText"></div></div></div>
+
+<script>
+const HDR=[['date','Date','date'],['flight','Flight No','text'],['sector','Sector','text'],['acreg','A/C Reg','text'],
+['p1n','P1 Name','text'],['p1id','P1 ID','text'],['p2n','P2 Name','text'],['p2id','P2 ID','text'],
+['p3n','P3 Name','text'],['p3id','P3 ID','text'],['p4n','P4 Name','text'],['p4id','P4 ID','text']];
+const SEAL=[['fbOpen','F&B Seal Open','text'],['fbClose','F&B Seal Close','text'],['merOpen','Merchandise Seal Open','text'],['merClose','Merchandise Seal Close','text']];
+
+const SECTIONS=[
+{id:'lm',name:'Light Meals',tierLabels:['Combo220','Combo200','Single140','Combo185(15%)','Combo170(15%)','Single120(15%)'],tierPrices:[220,200,140,185,170,120],
+ items:[['CRAB STICK CROISSANT',1],['TUNA CROISSANT',1],['HAM CHEESE SANDWICH',2]]},
+{id:'hm1',name:'Hot Meals (Briyani Set)',tierLabels:['Combo280','Combo240','Single200','Single170(15%)','Single100(50%)'],tierPrices:[280,240,200,170,100],
+ items:[['CHICKEN BRIYANI',0],['VEGETARIAN BRIYANI',0],['BENJA CHICKEN RICE',2]]},
+{id:'hm2',name:'Hot Meals (Main Set)',tierLabels:['Combo260','Combo220','Single180','Single155(15%)','Single90(50%)'],tierPrices:[260,220,180,155,90],
+ items:[['CHICKEN TERIYAKI',2],['SPICY CHICKEN BASIL',1],['ROASTED CHICKEN NOODLE',2],['VEGETARIAN FRIED RICE',0],['KOREAN CHICKEN RICE',1],['THAI BOAT NOODLE',2],['SPAGHETTI WITH ROASTED DUCK',2],['CHICKEN GREEN CURRY',1],['STIR-FRIED FLAT NOODLE',1]]},
+{id:'tpe',name:'TPE Hot Meals (เฉพาะเที่ยวบิน TPE)',tierLabels:['Combo390','Single360'],tierPrices:[390,360],
+ items:[['NOODLES WITH MINCED CHICKEN',0],['FRIED HAINANESE CHICKEN RICE MIX',0],['STIR FRIED BAMBOO SHOOT',0],['TEMPLE NOODLES WITH SEAFOOD',2],['WINE-MARINATED CATFISH WITH BASIL',3],['BRAISED CHICKEN WITH CURRY SAUCE',2],['WATER 200ML (PBM, LOAD AT TPE)',24]]},
+{id:'dessert',name:'Dessert',tierLabels:['Price'],tierPrices:null,
+ items:[['SALTED EGG CUSTARD BUN',2,120],['SALTED EGG BUN (15%)',2,105],['SALTED EGG BUN+TWININGS',2,160],['SALTED EGG BUN+AMERICANO',2,190],['APPLE SAUCE BROWNIE',2,95],['APPLE BROWNIE (15%)',2,85],['APPLE BROWNIE+TWININGS',2,160],['APPLE BROWNIE+AMERICANO',2,190]]},
+{id:'cafe',name:'Café Drinks',tierLabels:['Price'],tierPrices:null,
+ items:[['LATTE',8,100],['AMERICANO',8,100],['COCOA (2AMZ:1SERVE)',30,100],['AMZ HOT CHOCOLATE',0,60],['MILK TEA+BS',3,110],['MILK TEA+BS (15%)',0,95],['THAI TEA+BS',4,110],['THAI TEA+BS (15%)',0,95],['ORANGE JUICE',4,100],['ORANGE JUICE (15%)',0,85],['COCONUT WATER',2,90]]},
+{id:'drinks',name:'Drinks',tierLabels:['Price'],tierPrices:null,
+ items:[['COFFEE MATE/CREAMER',20,0],['SUGAR',20,0],['HOT WATER',0,30],['TWININGS EARL GREY',10,80],['TWININGS PEACH TEA',10,80],['VZ MEDIUM ROAST DRIP COFFEE',10,90],['VZ DARK ROAST DRIP COFFEE',10,90],['KHAOSHONG ICED AMERICANO x3',24,90],['SCHWEPPES MANAO SODA',2,60],['COKE ORIGINAL',10,60],['COKE ZERO SUGAR',4,60],['COKE ZERO ZERO',10,60],['SPRITE ORIGINAL',4,60],['OVALTINE UHT',4,60],['333 BEER',4,150],['SAIGON SPECIAL BEER',4,200],['CHANG CLASSIC BEER',4,150],['CHANG COLD BREW',4,200],['VZ WATER 330ML',48,40]]},
+{id:'snack',name:'Instant Meals & Snacks',tierLabels:['Price'],tierPrices:null,
+ items:[['MAMA PORK FLAVOUR',18,70],['MAMA SHRIMP TOM YAM',18,70],['SAMYANG VEGETASTY NOODLE',4,80],['PRINGLES ORIGINAL POTATO',14,70],['PRINGLES SOUR CREAM POTATO',14,70],['M&M MILK CHOCOLATE',14,80],['MACADAMIA SALTED PACK',4,70],['MACADAMIA TRUFFLE PACK',4,70],['MACADAMIA SHALLOT PACK',4,70],['MACADAMIA WASABI PACK',4,70],['MACADAMIA SALTED BOX',2,440],['MACADAMIA TRUFFLE BOX',2,440],['MACADAMIA SHALLOT BOX',2,440],['MACADAMIA WASABI BOX',2,440],['MADAME THAI MANGO CHEWY CUBE',10,110]]},
+{id:'merch',name:'Merchandise',tierLabels:['Price'],tierPrices:null,
+ items:[['T-SHIRT RED (MEN) M',1,350],['T-SHIRT RED (MEN) L',1,350],['T-SHIRT RED (MEN) XL',1,350],['T-SHIRT WHITE (MEN) M',1,350],['T-SHIRT WHITE (MEN) L',1,350],['T-SHIRT WHITE (MEN) XL',1,350],['T-SHIRT NAVY (MEN) M',1,350],['T-SHIRT NAVY (MEN) L',1,350],['T-SHIRT NAVY (MEN) XL',1,350],
+ ['VIETJET AIRCRAFT MODEL 1:200',2,690],['SUNSHINE AIRCRAFT PLUSH TOY',1,250],["KEYCHAIN BAG TAG 'REMOVE BEFORE FLT'",2,70],['VIETJET COOLER FLASK RED',2,280],['CAPTAIN KEYCHAIN',5,70],['CABIN CREW KEYCHAIN',5,70],['VIETJET CAP BLACK',2,250],['VIETJET CAP RED',2,250],['VIETJET CARRY BAG BLACK',1,390],['VIETJET CARRY BAG RED',1,390],['DTAC HAPPY TOURIST SIM',10,299],
+ ['COMFORT KIT RED',2,350],['COMFORT KIT BLACK',2,350],['VIETJET BLANKET',5,390],['VIETJET UMBRELLA',2,270],['VIETJET AIRCRAFT SWIM RING',1,390],['VIETJET AMY SWIM RING',1,390],['PASTEL POCKET INHALER',6,50],['PASTEL BALM STICK',3,90],["HELLO LET'S TRAVEL BAG TAG",5,130],["LET'S FLY COOLER FLASK",2,380],
+ ['WONDERLAND TOTE BAG',2,380],["LET'S FLY CAP BLACK (CREW)",2,350],["LET'S FLY CAP BLACK (AIRCRAFT)",2,350],["LET'S FLY CAP WHITE (CREW)",2,350],["LET'S FLY CAP WHITE (AIRCRAFT)",2,350],["HELLO LET'S TRAVEL T-SHIRT D1 (M)",1,400],["HELLO LET'S TRAVEL T-SHIRT D1 (L)",1,400],["HELLO LET'S TRAVEL T-SHIRT D1 (XL)",1,400],["HELLO LET'S TRAVEL T-SHIRT D2 (M)",1,400],["HELLO LET'S TRAVEL T-SHIRT D2 (L)",1,400],
+ ["HELLO LET'S TRAVEL T-SHIRT D2 (XL)",1,400],['WONDERLAND STICKER',10,70],['SKY CAFÉ PAPER BAG',15,5],['SKY CAFÉ BIO PLASTIC BAG',15,3]]},
+];
+
+// flat search index across every item (built-in + custom) in every section — rebuilt whenever custom items change
+let SEARCH_INDEX = [];
+
+const SEATDATA={
+'Boeing 737-8':[['SKYBOSS Row 1-3',850,1800,2200,2200],['Premium Seat Row',750,1200,1800,1800],['Exit Seat Row',750,1200,1800,1800],['Front Seat Row',550,1000,1200,1200],['Normal Seat Row',350,850,1050,1050]],
+'A320/A321 (VKG/VKH/VKJ/VKR)':[['SKYBOSS Row 1-3',850,1800,2200,2200],['Premium Seat',750,1200,1800,1800],['Exit Seat',750,1200,1800,1800],['Front Seat',550,1000,1200,1200],['Normal Seat',350,850,1050,1050]],
+'A321 VKL/VKM':[['SKYBOSS Row 1-2',1500,2200,2500,2500],['Row 1-3 (Double)',800,1400,2000,2600],['Row 4-last (Double)',600,1100,1500,2000],['Row 3 (Double)',800,1400,2000,2600],['Row 4-last (Double) 2',600,1100,1500,2000]],
+};
+const SEATCOLS=['Base','Intl<2hr','Intl2-4hr','Intl>4hr'];
+
+let STATE=JSON.parse(localStorage.getItem('ifcsr_state')||'{}');
+function g(k,d){return STATE[k]!==undefined?STATE[k]:d;}
+function set(k,v){STATE[k]=v;}
+
+// ===== Custom items (user-added menu items, assignable to any category) =====
+function getCustom(sid){ return g('custom_'+sid, []); }
+function setCustom(sid,arr){ set('custom_'+sid, arr); }
+function getItems(sec){
+ // unified list: built-in items (idxKey = numeric index as string) + custom items (idxKey = 'c'+cid)
+ const list = sec.items.map((item,idx)=>({idxKey:String(idx), name:item[0], par:item[1], price:item[2], custom:false}));
+ getCustom(sec.id).forEach(c=>{
+  list.push({idxKey:'c'+c.cid, name:c.name, par:c.par, price:c.price, custom:true, cid:c.cid});
+ });
+ return list;
+}
+function deleteCustomItem(sid,cid){
+ if(!confirm('ลบรายการนี้?')) return;
+ setCustom(sid, getCustom(sid).filter(c=>String(c.cid)!==String(cid)));
+ buildSearchIndex();
+ recalcSection(sid); recalcGrand();
+ if(currentModalSid===sid) openSectionModal(sid);
+}
+function addCustomItem(){
+ const sid=document.getElementById('newItemSec').value;
+ const name=document.getElementById('newItemName').value.trim();
+ const par=parseFloat(document.getElementById('newItemPar').value)||0;
+ const price=parseFloat(document.getElementById('newItemPrice').value)||0;
+ if(!name){ alert('กรุณาใส่ชื่อสินค้าก่อนครับ'); return; }
+ const arr=getCustom(sid);
+ const cid=Date.now()+'_'+Math.floor(Math.random()*1000);
+ arr.push({cid,name,par,price});
+ setCustom(sid,arr);
+ buildSearchIndex();
+ recalcSection(sid); recalcGrand();
+ document.getElementById('newItemName').value='';
+ document.getElementById('newItemPar').value='0';
+ document.getElementById('newItemPrice').value='0';
+ if(currentModalSid===sid) openSectionModal(sid);
+ alert('เพิ่มรายการ "'+name+'" ในหมวด '+SECTIONS.find(s=>s.id===sid).name+' แล้ว ✅');
+}
+function buildNewItemSecSelect(){
+ const sel=document.getElementById('newItemSec'); if(!sel) return;
+ sel.innerHTML = SECTIONS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+// ===== Price overrides for built-in items (menu prices change over time) =====
+function priceOvKey(sec,entry,ti){
+ if(entry.custom) return null;
+ return sec.tierPrices ? `pov_${sec.id}_t${ti}` : `pov_${sec.id}_${entry.idxKey}`;
+}
+function getPrice(sec,entry,ti,basePrice){
+ if(entry.custom) return entry.price;
+ const k=priceOvKey(sec,entry,ti);
+ const v=g(k,undefined);
+ return (v===undefined||v===null||v==='')? basePrice : v;
+}
+function setPriceOv(key,sid,val){
+ val=(val==null?'':String(val)).trim();
+ if(val===''){ delete STATE[key]; } else { set(key, parseFloat(val)||0); }
+ recalcSection(sid); recalcGrand();
+ if(currentModalSid===sid) openSectionModal(sid);
+}
+function setCustomPrice(sid,cid,val){
+ const arr=getCustom(sid);
+ const item=arr.find(c=>String(c.cid)===String(cid));
+ if(item){ item.price=parseFloat(val)||0; setCustom(sid,arr); }
+ recalcSection(sid); recalcGrand();
+}
+function buildSearchIndex(){
+ SEARCH_INDEX = [];
+ SECTIONS.forEach(sec=>{
+  getItems(sec).forEach(entry=>{
+   SEARCH_INDEX.push({sid:sec.id, idx:entry.idxKey, name:entry.name, par:entry.par, secName:sec.name});
+  });
+ });
+}
+buildSearchIndex();
+buildNewItemSecSelect();
+
+function buildHdrGrid(list,wrapId){
+ const el=document.getElementById(wrapId); el.innerHTML='';
+ list.forEach(([k,label,type])=>{
+  const d=document.createElement('div');
+  d.innerHTML=`<label>${label}</label><input type="${type}" id="f_${k}" value="${g(k,'')}">`;
+  el.appendChild(d);
+ });
+}
+buildHdrGrid(HDR,'hdrGrid');
+buildHdrGrid(SEAL,'sealGrid');
+document.querySelectorAll('#hdrGrid input,#sealGrid input').forEach(inp=>inp.addEventListener('input',e=>set(e.target.id.slice(2),e.target.value)));
+
+// flight mode segment
+let flightMode=g('flightMode','DOM');
+function paintSeg(){document.querySelectorAll('#flightSeg button').forEach(b=>b.classList.toggle('active',b.dataset.v===flightMode));}
+document.querySelectorAll('#flightSeg button').forEach(b=>b.addEventListener('click',()=>{
+ flightMode=b.dataset.v;set('flightMode',flightMode);paintSeg();
+ if(currentModalSid==='SEAT') openSeatModal();
+ else if(currentModalSid) openSectionModal(currentModalSid);
+}));
+paintSeg();
+
+function effTiers(sec){ return sec.tierPrices ? sec.tierLabels.map((l,i)=>[l,sec.tierPrices[i]]) : null; }
+function itemKey(sid,idx,tIdx,kind){return `${sid}_${idx}_${tIdx}_${kind}`;}
+
+function qtyInputHtml(id,val){
+ return `<div class="qtygrp"><button type="button" class="stepbtn" onclick="bump('${id}',-1)">−</button>
+ <input class="qtyinput" type="text" inputmode="numeric" id="${id}" value="${val}" oninput="onQtyRaw('${id}',this.value)">
+ <button type="button" class="stepbtn" onclick="bump('${id}',1)">+</button></div>`;
+}
+function bump(id,delta){
+ const inp=document.getElementById(id); let v=(parseFloat(inp.value)||0)+delta; if(v<0)v=0;
+ inp.value=v; onQtyRaw(id,v);
+}
+function onQtyRaw(domId,val){
+ const parts=domId.split('_'); // sid, idx, tIdx, kind
+ const sid=parts[0], key=domId;
+ set(key, parseFloat(val)||0);
+ recalcSection(sid); recalcGrand();
+ syncSearchDisplay(domId, parseFloat(val)||0);
+}
+
+// ===== Quick search: find an item by name across every section, tap +/- to count it right there =====
+function doSearch(q){
+ const box=document.getElementById('searchResults');
+ q=(q||'').trim().toLowerCase();
+ if(q.length<1){ box.innerHTML=''; return; }
+ const matches=SEARCH_INDEX.filter(r=>r.name.toLowerCase().includes(q)).slice(0,25);
+ if(matches.length===0){ box.innerHTML='<div class="searchempty">ไม่พบรายการที่ตรงกับ "'+q+'"</div>'; return; }
+ box.innerHTML=matches.map(r=>{
+  const key=`${r.sid}_${r.idx}_act`;
+  const val=g(key,0);
+  const uid=`search_${r.sid}_${r.idx}_act`;
+  const b=itemBreakdown(r.sid,r.idx);
+  const ccId=`search_cc_${r.sid}_${r.idx}`;
+  return `<div class="searchrow">
+   <div class="searchinfo"><span class="searchname">${r.name}<span class="searchtag">${r.secName}</span></span><span class="searchmeta">Par ${r.par} · เหลือ (Crew Close) <b id="${ccId}">${b.crewCls}</b></span></div>
+   <div class="qtygrp">
+    <button type="button" class="stepbtn" onclick="searchBump('${r.sid}','${r.idx}',-1)">−</button>
+    <input class="qtyinput" type="text" inputmode="numeric" id="${uid}" value="${val}" oninput="searchBumpSet('${r.sid}','${r.idx}',this.value)">
+    <button type="button" class="stepbtn" onclick="searchBump('${r.sid}','${r.idx}',1)">+</button>
+   </div>
+   <button type="button" class="searchopen" onclick="openSectionModal('${r.sid}')">เปิดหมวด ›</button>
+  </div>`;
+ }).join('');
+}
+function syncSearchDisplay(domId, v){
+ if(!domId.endsWith('_act')) return;
+ const el=document.getElementById('search_'+domId); if(el) el.value=v;
+}
+function searchBump(sid,idx,delta){
+ const key=`${sid}_${idx}_act`;
+ let v=(g(key,0))+delta; if(v<0)v=0;
+ set(key,v); recalcSection(sid); recalcGrand();
+ const sEl=document.getElementById(`search_${key}`); if(sEl) sEl.value=v;
+ const mEl=document.getElementById(key); if(mEl) mEl.value=v;
+}
+function searchBumpSet(sid,idx,val){
+ const key=`${sid}_${idx}_act`;
+ const v=parseFloat(val)||0;
+ set(key,v); recalcSection(sid); recalcGrand();
+ const mEl=document.getElementById(key); if(mEl) mEl.value=v;
+}
+
+function renderItemCard(sec,entry){
+ const idx=entry.idxKey, name=entry.name, par=entry.par;
+ const shared = entry.custom ? null : effTiers(sec);
+ const tiersBase = shared || [[null,entry.price]];
+ let rows='';
+ tiersBase.forEach((t,ti)=>{
+  const dk=itemKey(sec.id,idx,ti,'d'), ik=itemKey(sec.id,idx,ti,'i');
+  const basePrice=t[1];
+  const curPrice=getPrice(sec,entry,ti,basePrice);
+  const povKey=priceOvKey(sec,entry,ti);
+  const priceHtml = entry.custom
+   ? `<input type="text" inputmode="decimal" class="priceInput" value="${curPrice}" onchange="setCustomPrice('${sec.id}','${entry.cid}',this.value)">`
+   : `<input type="text" inputmode="decimal" class="priceInput" value="${curPrice}" onchange="setPriceOv('${povKey}','${sec.id}',this.value)">`;
+  const label = t[0] ? `${t[0]}` : `ราคา`;
+  const labelHtml = `${label} ฿${priceHtml}`;
+  if(flightMode==='BOTH'){
+   rows+=`<div class="tierrow"><span class="tierlabel">${labelHtml}</span><span class="sub">DOM</span>${qtyInputHtml(dk,g(dk,0))}<span class="sub">INT</span>${qtyInputHtml(ik,g(ik,0))}</div>`;
+  }else{
+   const k = flightMode==='DOM' ? dk : ik;
+   rows+=`<div class="tierrow"><span class="tierlabel">${labelHtml}</span>${qtyInputHtml(k,g(k,0))}</div>`;
+  }
+ });
+ const base=`${sec.id}_${idx}`;
+ const actK=base+'_act', defK=base+'_def', sbK=base+'_sb', pbmK=base+'_pbm', comboK=base+'_combo';
+ const actualRow=`<div class="actualrow"><span class="actuallabel">① Actual <span class="actualsub">(นับของจากสต๊อกจริง)</span></span>${qtyInputHtml(actK,g(actK,0))}</div>`;
+ const extra=`<details class="subdet"><summary>Defect / Sky Boss / PBM / Combo ▾</summary>
+  <div class="tierrow"><span class="tierlabel">Defect (ของเสีย)</span>${qtyInputHtml(defK,g(defK,0))}</div>
+  <div class="tierrow"><span class="tierlabel">Sky Boss (แจกฟรี)</span>${qtyInputHtml(sbK,g(sbK,0))}</div>
+  <div class="tierrow"><span class="tierlabel">PBM</span>${qtyInputHtml(pbmK,g(pbmK,0))}</div>
+  <div class="tierrow"><span class="tierlabel">Combo (พ่วงเซ็ตอาหารอื่น)</span>${qtyInputHtml(comboK,g(comboK,0))}</div>
+  <div class="note" id="chk_${base}"></div>
+ </details>`;
+ const delBtn = entry.custom ? `<button type="button" class="delBtn" onclick="deleteCustomItem('${sec.id}','${entry.cid}')">ลบ ✕</button>` : '';
+ return `<div class="itemcard"><div class="itemhead"><span class="itemname">${name}${entry.custom?' <span class="customtag">ใหม่</span>':''}</span><span class="par">Par ${par}</span>${delBtn}<span class="rowtot" id="rt_${sec.id}_${idx}">0฿</span></div>${actualRow}${rows}${extra}</div>`;
+}
+
+function renderSection(sec){
+ let html='';
+ getItems(sec).forEach(entry=>{ html+=renderItemCard(sec,entry); });
+ return html;
+}
+
+let currentModalSid=null; // 'SEAT' or a section id, or null when closed
+
+function buildMenuGrid(){
+ const grid=document.getElementById('menuGrid');
+ let html='';
+ SECTIONS.forEach(sec=>{
+  html+=`<button type="button" class="menubtn" onclick="openSectionModal('${sec.id}')"><span class="menuname">${sec.name}</span><span class="menutot" id="sumtotbtn_${sec.id}">0 THB</span></button>`;
+ });
+ html+=`<button type="button" class="menubtn" onclick="openSeatModal()"><span class="menuname">Seat Assignment</span><span class="menutot" id="seatTotBtn">0 THB</span></button>`;
+ grid.innerHTML=html;
+}
+buildMenuGrid();
+
+function closeItemModal(){
+ document.getElementById('itemModal').classList.remove('open');
+ currentModalSid=null;
+}
+
+function openSectionModal(sid){
+ currentModalSid=sid;
+ const sec=SECTIONS.find(s=>s.id===sid);
+ document.getElementById('itemModalTitle').textContent=sec.name;
+ document.getElementById('itemModalBody').innerHTML = renderSection(sec) + `<div class="sectot" id="sectot_${sid}">รวม: 0 THB</div>`;
+ document.getElementById('itemModal').classList.add('open');
+ recalcSection(sid);
+}
+
+function renderAllSections(){ /* kept for compatibility; menu grid needs no full re-render */ }
+
+function recalcSection(sid){
+ const sec=SECTIONS.find(s=>s.id===sid);
+ let secSum=0;
+ getItems(sec).forEach(entry=>{
+  const idx=entry.idxKey;
+  const shared = entry.custom ? null : effTiers(sec);
+  const tiersBase = shared || [[null,entry.price]];
+  let rowSum=0;
+  tiersBase.forEach((t,ti)=>{
+   const price=getPrice(sec,entry,ti,t[1]);
+   const d=g(itemKey(sid,idx,ti,'d'),0), i=g(itemKey(sid,idx,ti,'i'),0);
+   rowSum += (d+i)*price;
+  });
+  const cell=document.getElementById(`rt_${sid}_${idx}`); if(cell) cell.textContent=rowSum.toLocaleString()+'฿';
+  secSum+=rowSum;
+  const base=`${sid}_${idx}`;
+  const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), combo=g(base+'_combo',0);
+  let sold=0; tiersBase.forEach((t,ti)=>{ sold+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
+  const crewCls = act - sold - def - sb - pbm - combo;
+  const chkCell=document.getElementById(`chk_${base}`);
+  if(chkCell){
+   const neg = crewCls<0;
+   chkCell.innerHTML=`ขาย ${sold} + Defect ${def} + SkyBoss ${sb} + PBM ${pbm} + Combo ${combo} → <b>Crew Cls (คำนวณอัตโนมัติ) = ${crewCls}</b> ${neg?'⚠️ ติดลบ (ใส่ Actual ไม่พอ หรือกรอกขายเกิน)':'✅'}`;
+   chkCell.style.color= neg? '#e65100':'#2e7d32';
+  }
+  const ccEl=document.getElementById(`search_cc_${base}`); if(ccEl) ccEl.textContent=crewCls;
+ });
+ const sc=document.getElementById(`sectot_${sid}`), btn=document.getElementById(`sumtotbtn_${sid}`);
+ if(sc) sc.textContent='รวม: '+secSum.toLocaleString()+' THB';
+ if(btn) btn.textContent=secSum.toLocaleString()+' THB';
+ return secSum;
+}
+
+// Seat assignment (rendered into the modal on demand)
+let acSel=null;
+function openSeatModal(){
+ currentModalSid='SEAT';
+ document.getElementById('itemModalTitle').textContent='Seat Assignment';
+ document.getElementById('itemModalBody').innerHTML = `<div class="note">⚠️ ราคาตรวจจากภาพแบบฟอร์ม อาจไม่ชัด 100% กรุณาตรวจ/แก้ไขราคาก่อนใช้งานจริง</div><label>เครื่องบิน</label><select id="acType"></select><div id="seatList"></div><div class="sectot" id="seatTot">Seats Total: 0 THB</div>`;
+ document.getElementById('itemModal').classList.add('open');
+ acSel=document.getElementById('acType');
+ Object.keys(SEATDATA).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;acSel.appendChild(o);});
+ acSel.value=g('acSel',Object.keys(SEATDATA)[0]);
+ acSel.addEventListener('change',e=>{set('acSel',e.target.value);renderSeat();});
+ renderSeat();
+}
+function renderSeat(){
+ if(!acSel) return;
+ const rows=SEATDATA[acSel.value]; let html='';
+ rows.forEach((r,ri)=>{
+  let inner='';
+  for(let c=1;c<=4;c++){
+   const price=r[c];
+   if(flightMode==='BOTH'){
+    const dk=`seat_${acSel.value}_${ri}_${c}_d`, ik=`seat_${acSel.value}_${ri}_${c}_i`;
+    inner+=`<div class="tierrow"><span class="tierlabel">${SEATCOLS[c-1]} <b>(${price}฿)</b></span><span class="sub">DOM</span>${qtyInputHtml(dk,g(dk,0))}<span class="sub">INT</span>${qtyInputHtml(ik,g(ik,0))}</div>`;
+   }else{
+    const kk=`seat_${acSel.value}_${ri}_${c}_${flightMode==='DOM'?'d':'i'}`;
+    inner+=`<div class="tierrow"><span class="tierlabel">${SEATCOLS[c-1]} <b>(${price}฿)</b></span>${qtyInputHtml(kk,g(kk,0))}</div>`;
+   }
+  }
+  html+=`<div class="seatcard"><div class="itemhead"><span class="itemname">${r[0]}</span><span class="rowtot" id="seatrt_${ri}">0฿</span></div>${inner}</div>`;
+ });
+ document.getElementById('seatList').innerHTML=html;
+ recalcSeat();
+}
+window.onQtyRaw=onQtyRaw; // ensure global for seat inputs too (handled generically below)
+function onSeatQtyPatch(){ /* seat inputs reuse onQtyRaw but with prefix seat_ - handle specially */ }
+// override onQtyRaw to also catch seat_ keys
+const _origOnQtyRaw=onQtyRaw;
+onQtyRaw=function(domId,val){
+ set(domId, parseFloat(val)||0);
+ if(domId.startsWith('seat_')){ recalcSeat(); recalcGrand(); }
+ else { const sid=domId.split('_')[0]; recalcSection(sid); recalcGrand(); syncSearchDisplay(domId, parseFloat(val)||0); }
+}
+function recalcSeat(){
+ const selVal = acSel ? acSel.value : g('acSel', Object.keys(SEATDATA)[0]);
+ const rows=SEATDATA[selVal]; let tot=0;
+ rows.forEach((r,ri)=>{
+  let rs=0;
+  for(let c=1;c<=4;c++){
+   const d=g(`seat_${selVal}_${ri}_${c}_d`,0), i=g(`seat_${selVal}_${ri}_${c}_i`,0);
+   rs += (d+i)*r[c];
+  }
+  const cell=document.getElementById(`seatrt_${ri}`); if(cell) cell.textContent=rs.toLocaleString()+'฿';
+  tot+=rs;
+ });
+ const el=document.getElementById('seatTot'); if(el) el.textContent='Seats Total: '+tot.toLocaleString()+' THB';
+ const btn=document.getElementById('seatTotBtn'); if(btn) btn.textContent=tot.toLocaleString()+' THB';
+ return tot;
+}
+recalcSeat();
+
+// cash/voucher
+document.getElementById('cashTHB').value=g('cashTHB',0);
+document.getElementById('cashOther').value=g('cashOther',0);
+document.getElementById('voucherQty').value=g('voucherQty',0);
+['cashTHB','cashOther','voucherQty'].forEach(id=>{
+ document.getElementById(id).addEventListener('input',e=>{set(id,parseFloat(e.target.value)||0);recalcGrand();});
+});
+
+function recalcGrand(){
+ let fb=0;
+ ['lm','hm1','hm2','tpe','dessert','cafe','drinks','snack'].forEach(id=>fb+=recalcSection(id));
+ const merch=recalcSection('merch');
+ const seat=recalcSeat();
+ const voucherTot=g('voucherQty',0)*140;
+ document.getElementById('voucherNote').textContent='Voucher Total: '+voucherTot.toLocaleString()+' THB';
+ document.getElementById('gMerch').textContent=merch.toLocaleString();
+ document.getElementById('gSeat').textContent=seat.toLocaleString();
+ document.getElementById('gFB').textContent=fb.toLocaleString();
+ document.getElementById('gVoucher').textContent=voucherTot.toLocaleString();
+ const grand=merch+seat+fb-voucherTot;
+ document.getElementById('gGrand').textContent=grand.toLocaleString()+' THB';
+ localStorage.setItem('ifcsr_state',JSON.stringify(STATE));
+}
+recalcGrand();
+
+function saveAll(){ localStorage.setItem('ifcsr_state',JSON.stringify(STATE)); alert('บันทึกแล้ว ✅ (เก็บในเครื่องนี้)'); }
+function resetAll(){
+ if(!confirm('ล้างข้อมูลที่กรอกทั้งหมด (เที่ยวบิน/นับของ/ยอดขาย) — เมนูที่เพิ่มเองและราคาที่แก้ไว้จะยังอยู่เหมือนเดิม ยืนยันหรือไม่?')) return;
+ Object.keys(STATE).forEach(k=>{
+  if(k.startsWith('custom_') || k.startsWith('pov_')) return; // เก็บเมนูที่เพิ่มเอง + ราคาที่แก้ไว้
+  delete STATE[k];
+ });
+ localStorage.setItem('ifcsr_state', JSON.stringify(STATE));
+ location.reload();
+}
+function resetEverything(){
+ if(!confirm('⚠️ ล้างข้อมูลทั้งหมดแบบเต็มรูปแบบ รวมเมนูที่เพิ่มเองและราคาที่แก้ไว้ด้วย (คืนเป็นค่าเริ่มต้นทั้งแอป) ยืนยันหรือไม่?')) return;
+ STATE={}; localStorage.removeItem('ifcsr_state'); location.reload();
+}
+
+// ===== Backup / restore (for moving to a new device/browser) =====
+function tsStamp(){
+ const d=new Date();
+ return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'_'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
+}
+function downloadBlob(blob, filename){
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url; a.download=filename;
+ document.body.appendChild(a); a.click(); document.body.removeChild(a);
+ URL.revokeObjectURL(url);
+}
+function exportBackup(){
+ const blob=new Blob([JSON.stringify(STATE,null,2)],{type:'application/json'});
+ downloadBlob(blob, `ifcsr_backup_${tsStamp()}.json`);
+}
+function importBackup(file){
+ if(!file) return;
+ const reader=new FileReader();
+ reader.onload=(e)=>{
+  try{
+   const data=JSON.parse(e.target.result);
+   if(typeof data!=='object'||data===null) throw new Error('bad format');
+   if(!confirm('นำเข้าข้อมูลนี้จะเขียนทับข้อมูลปัจจุบันทั้งหมดในเครื่องนี้ ยืนยันหรือไม่?')) return;
+   localStorage.setItem('ifcsr_state', JSON.stringify(data));
+   location.reload();
+  }catch(err){
+   alert('ไฟล์ Backup ไม่ถูกต้อง หรือเสียหาย เปิดไม่ได้ครับ');
+  }
+ };
+ reader.readAsText(file);
+}
+
+// ===== Print to PDF (uses the device's native "Save as PDF" print dialog, fully offline) =====
+function printSummary(){
+ document.body.classList.add('printMode');
+ const after=()=>{ document.body.classList.remove('printMode'); window.removeEventListener('afterprint',after); };
+ window.addEventListener('afterprint', after);
+ setTimeout(()=>{ window.print(); setTimeout(after, 1000); }, 60);
+}
+
+// ===== Save summary as a PNG image (hand-drawn on canvas, no external library) =====
+function buildSummaryPlainText(){
+ const lines=[];
+ lines.push('IFCSR สรุปรายงาน');
+ lines.push(`Date: ${g('date','')||'-'}   Flight: ${g('flight','')||'-'}   Sector: ${g('sector','')||'-'}   โหมด: ${flightMode}`);
+ lines.push(`Merchandise ${document.getElementById('gMerch').textContent} · Seats ${document.getElementById('gSeat').textContent} · F&B ${document.getElementById('gFB').textContent} · Voucher -${document.getElementById('gVoucher').textContent} -> Grand Total ${document.getElementById('gGrand').textContent}`);
+ lines.push('');
+ let any=false;
+ SECTIONS.forEach(sec=>{
+  const secLines=[];
+  getItems(sec).forEach(entry=>{
+   const b=itemBreakdown(sec.id, entry.idxKey);
+   if(!b.hasAny) return;
+   any=true;
+   const parts=[];
+   if(b.act) parts.push(`Actual ${b.act}`);
+   if(b.sold) parts.push(`ขาย ${b.sold}`);
+   if(b.def) parts.push(`Defect ${b.def}`);
+   if(b.sb) parts.push(`SkyBoss ${b.sb}`);
+   if(b.pbm) parts.push(`PBM ${b.pbm}`);
+   if(b.combo) parts.push(`Combo ${b.combo}`);
+   parts.push(`Crew Close ${b.crewCls}`);
+   secLines.push(`  ${b.name}${b.custom?' (ใหม่)':''} — ${parts.join(' · ')}`);
+  });
+  if(secLines.length){ lines.push(sec.name+':'); lines.push(...secLines); lines.push(''); }
+ });
+ const seatLines=[];
+ Object.keys(SEATDATA).forEach(ac=>{
+  SEATDATA[ac].forEach((r,ri)=>{
+   for(let c=1;c<=4;c++){
+    const d=g(`seat_${ac}_${ri}_${c}_d`,0), i=g(`seat_${ac}_${ri}_${c}_i`,0);
+    if(d||i){ any=true; seatLines.push(`  ${r[0]} (${SEATCOLS[c-1]}, ${ac}) — DOM ${d} · INT ${i}`); }
+   }
+  });
+ });
+ if(seatLines.length){ lines.push('Seat Assignment:'); lines.push(...seatLines); }
+ if(!any) lines.push('ยังไม่ได้นับของเลยครับ');
+ return lines;
+}
+function downloadSummaryImage(){
+ const lines=buildSummaryPlainText();
+ const padding=20, lineHeight=22, fontSize=14, width=760;
+ const measureCanvas=document.createElement('canvas');
+ const mctx=measureCanvas.getContext('2d');
+ mctx.font=`${fontSize}px sans-serif`;
+ const wrapped=[];
+ lines.forEach(line=>{
+  if(line===''){ wrapped.push(''); return; }
+  let cur='';
+  line.split(' ').forEach(w=>{
+   const test=cur? cur+' '+w : w;
+   if(mctx.measureText(test).width > width-padding*2 && cur){ wrapped.push(cur); cur=w; } else cur=test;
+  });
+  if(cur) wrapped.push(cur);
+ });
+ const canvas=document.createElement('canvas');
+ canvas.width=width;
+ canvas.height=padding*2 + wrapped.length*lineHeight + 10;
+ const ctx=canvas.getContext('2d');
+ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle='#222222'; ctx.font=`${fontSize}px sans-serif`; ctx.textBaseline='top';
+ wrapped.forEach((line,i)=>{ ctx.fillText(line, padding, padding+i*lineHeight); });
+ canvas.toBlob(blob=>{ downloadBlob(blob, `ifcsr_summary_${tsStamp()}.png`); });
+}
+function itemBreakdown(sid,idx){
+ const sec=SECTIONS.find(s=>s.id===sid);
+ const entry=getItems(sec).find(e=>e.idxKey===String(idx));
+ if(!entry) return {name:'',act:0,sold:0,def:0,sb:0,pbm:0,combo:0,crewCls:0,hasAny:false};
+ const shared = entry.custom ? null : effTiers(sec);
+ const myTiers = shared || [[null,entry.price]];
+ const base=`${sid}_${idx}`;
+ const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), combo=g(base+'_combo',0);
+ let sold=0; myTiers.forEach((t,ti)=>{ sold+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
+ const crewCls = act-sold-def-sb-pbm-combo;
+ const hasAny = (act!==0||sold!==0||def!==0||sb!==0||pbm!==0||combo!==0);
+ return {name:entry.name,act,sold,def,sb,pbm,combo,crewCls,hasAny,custom:entry.custom};
+}
+function showSummary(){
+ let html = `<div class="sumtop"><b>Date:</b> ${g('date','')||'-'} &nbsp; <b>Flight:</b> ${g('flight','')||'-'} &nbsp; <b>Sector:</b> ${g('sector','')||'-'} &nbsp; <b>โหมด:</b> ${flightMode}</div>`;
+ html += `<div class="sumtop"><b>Merchandise</b> ${document.getElementById('gMerch').textContent} · <b>Seats</b> ${document.getElementById('gSeat').textContent} · <b>F&amp;B</b> ${document.getElementById('gFB').textContent} · <b>Voucher</b> -${document.getElementById('gVoucher').textContent} → <b>Grand Total ${document.getElementById('gGrand').textContent}</b></div>`;
+ let anyCounted=false;
+ SECTIONS.forEach(sec=>{
+  let rows='';
+  getItems(sec).forEach(entry=>{
+   const b=itemBreakdown(sec.id,entry.idxKey);
+   if(!b.hasAny) return;
+   anyCounted=true;
+   const parts=[];
+   if(b.act) parts.push(`Actual ${b.act}`);
+   if(b.sold) parts.push(`ขาย ${b.sold}`);
+   if(b.def) parts.push(`Defect ${b.def}`);
+   if(b.sb) parts.push(`SkyBoss ${b.sb}`);
+   if(b.pbm) parts.push(`PBM ${b.pbm}`);
+   if(b.combo) parts.push(`Combo ${b.combo}`);
+   parts.push(`<b>Crew Close ${b.crewCls}</b>`);
+   rows += `<div class="sumitem">${b.name}${b.custom?' <span class="customtag">ใหม่</span>':''} — ${parts.join(' · ')}</div>`;
+  });
+  if(rows) html += `<div class="sumsection"><h3>${sec.name}</h3>${rows}</div>`;
+ });
+ let seatRows='';
+ Object.keys(SEATDATA).forEach(ac=>{
+  SEATDATA[ac].forEach((r,ri)=>{
+   for(let c=1;c<=4;c++){
+    const d=g(`seat_${ac}_${ri}_${c}_d`,0), i=g(`seat_${ac}_${ri}_${c}_i`,0);
+    if(d||i) seatRows += `<div class="sumitem">${r[0]} (${SEATCOLS[c-1]}, ${ac}) — DOM ${d} · INT ${i}</div>`;
+   }
+  });
+ });
+ if(seatRows){ anyCounted=true; html += `<div class="sumsection"><h3>Seat Assignment</h3>${seatRows}</div>`; }
+ if(!anyCounted) html += `<div class="sumempty">ยังไม่ได้นับของเลยครับ — ลองค้นหาหรือเปิดหมวดแล้วกรอก Actual ดูก่อน</div>`;
+ document.getElementById('sumText').innerHTML=html;
+ document.getElementById('modal').style.display='flex';
+}
+
+if('serviceWorker' in navigator){
+ window.addEventListener('load', ()=>{
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+ });
+}
+</script>
+</body>
+</html>
