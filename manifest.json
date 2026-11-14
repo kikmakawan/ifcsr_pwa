@@ -1,0 +1,14 @@
+{
+  "name": "IFCSR - In-Flight Commercial Sales Report",
+  "short_name": "IFCSR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f2f5",
+  "theme_color": "#d6171f",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
