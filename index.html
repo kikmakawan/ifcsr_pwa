@@ -115,6 +115,7 @@ input.rcInput{width:38px!important;height:30px;text-align:center;border:1px soli
 .linkChipX{cursor:pointer;color:#c62828;font-weight:700;}
 .autoComboNote{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:6px;padding:6px 8px;font-size:.74rem;margin:2px 0 6px;}
 .autoComboMini{color:#e65100!important;}
+.recipeNote{background:#e8f0fe;color:#1a56b0;border:1px solid #aecbfa;border-radius:6px;padding:6px 8px;font-size:.74rem;margin:2px 0 6px;}
 .b-backup{background:#eee;color:#444;text-align:center;}
 @media print{
  body.printMode > header, body.printMode > .wrap, body.printMode > .btnbar{display:none !important;}
@@ -233,7 +234,7 @@ const SECTIONS=[
  items:[['CRAB STICK CROISSANT',1],['TUNA CROISSANT',1],['HAM CHEESE SANDWICH',2]]},
 {id:'hm1',name:'Hot Meals (Briyani Set)',tierLabels:['Combo280','Combo240','Single200','Single170(15%)','Single100(50%)'],tierPrices:[280,240,200,170,100],
  items:[['CHICKEN BRIYANI',0],['VEGETARIAN BRIYANI',0],['BENJA CHICKEN RICE',2]]},
-{id:'hm2',name:'Hot Meals (Main Set)',tierLabels:['Combo260','Combo220','Single180','Single155(15%)','Single90(50%)'],tierPrices:[260,220,180,155,90],
+{id:'hm2',name:'Hot Meals (Main Set)',tierLabels:['Combo260 (คู่น้ำส้ม/อเมริกาโน่)','Combo220 (คู่โค้ก)','Single180','Single155(15%)','Single90(50%)'],tierPrices:[260,220,180,155,90],
  items:[['CHICKEN TERIYAKI',2],['SPICY CHICKEN BASIL',1],['ROASTED CHICKEN NOODLE',2],['VEGETARIAN FRIED RICE',0],['KOREAN CHICKEN RICE',1],['THAI BOAT NOODLE',2],['SPAGHETTI WITH ROASTED DUCK',2],['CHICKEN GREEN CURRY',1],['STIR-FRIED FLAT NOODLE',1]]},
 {id:'tpe',name:'TPE Hot Meals (เฉพาะเที่ยวบิน TPE)',tierLabels:['Combo390','Single360'],tierPrices:[390,360],
  items:[['NOODLES WITH MINCED CHICKEN',0],['FRIED HAINANESE CHICKEN RICE MIX',0],['STIR FRIED BAMBOO SHOOT',0],['TEMPLE NOODLES WITH SEAFOOD',2],['WINE-MARINATED CATFISH WITH BASIL',3],['BRAISED CHICKEN WITH CURRY SAUCE',2],['WATER 200ML (PBM, LOAD AT TPE)',24]]},
@@ -242,7 +243,8 @@ const SECTIONS=[
 {id:'cafe',name:'Café Drinks',tierLabels:['Price'],tierPrices:null,
  items:[['LATTE',8,100],['AMERICANO',8,100],['COCOA (2AMZ:1SERVE)',30,100],['AMZ HOT CHOCOLATE',0,60],['MILK TEA+BS',3,110],['MILK TEA+BS (15%)',0,95],['THAI TEA+BS',4,110],['THAI TEA+BS (15%)',0,95],['ORANGE JUICE',4,100],['ORANGE JUICE (15%)',0,85],['COCONUT WATER',2,90]]},
 {id:'drinks',name:'Drinks',tierLabels:['Price'],tierPrices:null,
- items:[['COFFEE MATE/CREAMER',20,0],['SUGAR',20,0],['HOT WATER',0,30],['TWININGS EARL GREY',10,80],['TWININGS PEACH TEA',10,80],['VZ MEDIUM ROAST DRIP COFFEE',10,90],['VZ DARK ROAST DRIP COFFEE',10,90],['KHAOSHONG ICED AMERICANO x3',24,90],['SCHWEPPES MANAO SODA',2,60],['COKE ORIGINAL',10,60],['COKE ZERO SUGAR',4,60],['COKE ZERO ZERO',10,60],['SPRITE ORIGINAL',4,60],['OVALTINE UHT',4,60],['333 BEER',4,150],['SAIGON SPECIAL BEER',4,200],['CHANG CLASSIC BEER',4,150],['CHANG COLD BREW',4,200],['VZ WATER 330ML',48,40]]},
+ items:[['COFFEE MATE/CREAMER',20,0],['SUGAR',20,0],['HOT WATER',0,30],['TWININGS EARL GREY',10,80],['TWININGS PEACH TEA',10,80],['VZ MEDIUM ROAST DRIP COFFEE',10,90],['VZ DARK ROAST DRIP COFFEE',10,90],['KHAOSHONG ICED AMERICANO (3 ซอง/แก้ว)',24,100,3],['SCHWEPPES MANAO SODA',2,60],['COKE ORIGINAL',10,60],['COKE ZERO SUGAR',4,60],['COKE ZERO ZERO',10,60],['SPRITE ORIGINAL',4,60],['OVALTINE UHT',4,60],['333 BEER',4,150],['SAIGON SPECIAL BEER',4,200],['CHANG CLASSIC BEER',4,150],['CHANG COLD BREW',4,200],['VZ WATER 330ML',48,40],
+ ['OVALTINE 3 IN 1',10,60],['TIPCO ORANGE JUICE',4,60]]},
 {id:'snack',name:'Instant Meals & Snacks',tierLabels:['Price'],tierPrices:null,
  items:[['MAMA PORK FLAVOUR',18,70],['MAMA SHRIMP TOM YAM',18,70],['SAMYANG VEGETASTY NOODLE',4,80],['PRINGLES ORIGINAL POTATO',14,70],['PRINGLES SOUR CREAM POTATO',14,70],['M&M MILK CHOCOLATE',14,80],['MACADAMIA SALTED PACK',4,70],['MACADAMIA TRUFFLE PACK',4,70],['MACADAMIA SHALLOT PACK',4,70],['MACADAMIA WASABI PACK',4,70],['MACADAMIA SALTED BOX',2,440],['MACADAMIA TRUFFLE BOX',2,440],['MACADAMIA SHALLOT BOX',2,440],['MACADAMIA WASABI BOX',2,440],['MADAME THAI MANGO CHEWY CUBE',10,110]]},
 {id:'promo',name:'Promotion & Campaign',tierLabels:['Price'],tierPrices:null,
@@ -277,9 +279,12 @@ function getCustom(sid){ return g('custom_'+sid, []); }
 function setCustom(sid,arr){ set('custom_'+sid, arr); }
 function getItems(sec){
  // unified list: built-in items (idxKey = numeric index as string) + custom items (idxKey = 'c'+cid)
- const list = sec.items.map((item,idx)=>({idxKey:String(idx), name:item[0], par:item[1], price:item[2], custom:false}));
+ // item[3] (optional) = unitsPerSale: how many stock units are consumed per 1 unit sold, when selling
+ // and counting happen in different units (e.g. Khaoshong: sold by the cup, counted/stocked by the sachet).
+ // defaults to 1 (sold qty === stock qty) when not given.
+ const list = sec.items.map((item,idx)=>({idxKey:String(idx), name:item[0], par:item[1], price:item[2], custom:false, unitsPerSale:item[3]||1}));
  getCustom(sec.id).forEach(c=>{
-  list.push({idxKey:'c'+c.cid, name:c.name, par:c.par, price:c.price, custom:true, cid:c.cid});
+  list.push({idxKey:'c'+c.cid, name:c.name, par:c.par, price:c.price, custom:true, cid:c.cid, unitsPerSale:1});
  });
  return list;
 }
@@ -371,11 +376,12 @@ function comboSoldQty(sid,idxKey){
   return q;
  }
  // no dedicated "Combo" tier (simple-priced item, e.g. a Promotion & Campaign bundle, or a custom item) —
- // use its own total sold qty across its (single) price row instead.
+ // use its own total sold qty across its (single) price row instead, converted to stock units if this
+ // item itself sells in different units than it's stocked in (see unitsPerSale).
  const shared = entry.custom ? null : effTiers(sec);
  const tiersBase = shared || [[null, entry.price]];
  let q=0; tiersBase.forEach((t,ti)=>{ q+=g(itemKey(sid,idxKey,ti,'d'),0)+g(itemKey(sid,idxKey,ti,'i'),0); });
- return q;
+ return q*(entry.unitsPerSale||1);
 }
 // combo links support MULTIPLE targets per source (e.g. a promo combo bundles both a snack AND a drink).
 // stored as an array of 'sid_idx' target keys; old single-string format (from an earlier version) is still read.
@@ -594,6 +600,9 @@ function renderItemCard(sec,entry){
  const actK=base+'_act', defK=base+'_def', sbK=base+'_sb', pbmK=base+'_pbm', comboK=base+'_combo', recountK=base+'_recount';
  const actualRow=`<div class="actualrow"><span class="actuallabel">① Actual <span class="actualsub">(นับของจากสต๊อกจริง)</span></span>${qtyInputHtml(actK,g(actK,0))}</div>`;
  const autoNote=`<div class="autoComboNote" id="autonote_${base}" style="display:none;"></div>`;
+ const recipeNote = (entry.unitsPerSale && entry.unitsPerSale!==1)
+  ? `<div class="recipeNote">📦 ขายนับเป็น "แก้ว/ชุด" แต่หักสต๊อกเป็น <b>${entry.unitsPerSale}</b> หน่วยต่อ 1 ที่ขาย (เช่น ขาย 1 แก้ว → หักสต๊อก ${entry.unitsPerSale}) — ตอนนับ Actual/เหลือจริง ให้นับเป็นจำนวนที่มีอยู่จริงในสต๊อก ไม่ใช่จำนวนแก้วที่ชงขายได้</div>`
+  : '';
  let linkRow='';
  if(canLinkCombo(sec, entry)){
   const curLinks = getComboLinks(sec.id, idx);
@@ -628,7 +637,7 @@ function renderItemCard(sec,entry){
   <div class="note" id="chk_${base}"></div>
  </details>`;
  const delBtn = entry.custom ? `<button type="button" class="delBtn" onclick="deleteCustomItem('${sec.id}','${entry.cid}')">ลบ ✕</button>` : '';
- return `<div class="itemcard"><div class="itemhead"><span class="itemname">${name}${entry.custom?' <span class="customtag">ใหม่</span>':''}</span><span class="par">Par ${par}</span>${delBtn}<span class="rowtot" id="rt_${sec.id}_${idx}">0฿</span></div>${actualRow}${autoNote}${rows}${extra}</div>`;
+ return `<div class="itemcard"><div class="itemhead"><span class="itemname">${name}${entry.custom?' <span class="customtag">ใหม่</span>':''}</span><span class="par">Par ${par}</span>${delBtn}<span class="rowtot" id="rt_${sec.id}_${idx}">0฿</span></div>${actualRow}${recipeNote}${autoNote}${rows}${extra}</div>`;
 }
 
 function renderSection(sec){
@@ -689,14 +698,17 @@ function recalcSection(sid){
   const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), manualCombo=g(base+'_combo',0);
   const auto=autoComboFor(sid,idx);
   const combo = manualCombo + auto.total;
-  let sold=0; tiersBase.forEach((t,ti)=>{ sold+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
+  let soldQty=0; tiersBase.forEach((t,ti)=>{ soldQty+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
+  const unitsPerSale=entry.unitsPerSale||1;
+  const sold=soldQty*unitsPerSale; // stock units consumed — what Crew Close actually subtracts
   const crewCls = act - sold - def - sb - pbm - combo;
   const recount = g(base+'_recount',0), recountTouched = g(base+'_recount_touched',false);
   const variance = recountTouched ? (recount - crewCls) : null;
   const chkCell=document.getElementById(`chk_${base}`);
   if(chkCell){
    const neg = crewCls<0;
-   let html=`ขาย ${sold} + Defect ${def} + SkyBoss ${sb} + PBM ${pbm} + Combo ${combo} → <b>Crew Cls (คำนวณอัตโนมัติ) = ${crewCls}</b> ${neg?'⚠️ ติดลบ (ใส่ Actual ไม่พอ หรือกรอกขายเกิน)':'✅'}`;
+   const soldLabel = unitsPerSale!==1 ? `ขาย ${soldQty} (หักสต๊อก ${sold})` : `ขาย ${sold}`;
+   let html=`${soldLabel} + Defect ${def} + SkyBoss ${sb} + PBM ${pbm} + Combo ${combo} → <b>Crew Cls (คำนวณอัตโนมัติ) = ${crewCls}</b> ${neg?'⚠️ ติดลบ (ใส่ Actual ไม่พอ หรือกรอกขายเกิน)':'✅'}`;
    if(auto.total>0){
     html += `<br>🔗 ตัดอัตโนมัติจาก Combo ที่ผูกไว้: +${auto.total} (${auto.contributions.map(c=>c.name+' x'+c.qty).join(', ')})`;
    }
@@ -896,7 +908,7 @@ function buildSummaryPlainText(){
    any=true;
    const parts=[];
    if(b.act) parts.push(`Actual ${b.act}`);
-   if(b.sold) parts.push(`ขาย ${b.sold}`);
+   if(b.sold) parts.push(b.unitsPerSale!==1 ? `ขาย ${b.soldQty} (หักสต๊อก ${b.sold})` : `ขาย ${b.sold}`);
    if(b.def) parts.push(`Defect ${b.def}`);
    if(b.sb) parts.push(`SkyBoss ${b.sb}`);
    if(b.pbm) parts.push(`PBM ${b.pbm}`);
@@ -947,19 +959,21 @@ function downloadSummaryImage(){
 function itemBreakdown(sid,idx){
  const sec=SECTIONS.find(s=>s.id===sid);
  const entry=getItems(sec).find(e=>e.idxKey===String(idx));
- if(!entry) return {name:'',act:0,sold:0,def:0,sb:0,pbm:0,combo:0,crewCls:0,hasAny:false,recountTouched:false,recount:0,variance:null};
+ if(!entry) return {name:'',act:0,sold:0,soldQty:0,unitsPerSale:1,def:0,sb:0,pbm:0,combo:0,crewCls:0,hasAny:false,recountTouched:false,recount:0,variance:null};
  const shared = entry.custom ? null : effTiers(sec);
  const myTiers = shared || [[null,entry.price]];
  const base=`${sid}_${idx}`;
  const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), manualCombo=g(base+'_combo',0);
  const auto=autoComboFor(sid,idx);
  const combo = manualCombo + auto.total;
- let sold=0; myTiers.forEach((t,ti)=>{ sold+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
+ let soldQty=0; myTiers.forEach((t,ti)=>{ soldQty+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
+ const unitsPerSale=entry.unitsPerSale||1;
+ const sold=soldQty*unitsPerSale;
  const crewCls = act-sold-def-sb-pbm-combo;
  const recount = g(base+'_recount',0), recountTouched = g(base+'_recount_touched',false);
  const variance = recountTouched ? (recount-crewCls) : null;
  const hasAny = (act!==0||sold!==0||def!==0||sb!==0||pbm!==0||combo!==0||recountTouched);
- return {name:entry.name,act,sold,def,sb,pbm,combo,crewCls,hasAny,custom:entry.custom,recount,recountTouched,variance};
+ return {name:entry.name,act,sold,soldQty,unitsPerSale,def,sb,pbm,combo,crewCls,hasAny,custom:entry.custom,recount,recountTouched,variance};
 }
 function collectHdrRows(){
  return HDR.filter(([k])=>k!=='date').map(([k,label])=>[label, g(k,'')||'-']);
@@ -983,7 +997,7 @@ function showSummary(){
    anyCounted=true;
    const parts=[];
    if(b.act) parts.push(`Actual ${b.act}`);
-   if(b.sold) parts.push(`ขาย ${b.sold}`);
+   if(b.sold) parts.push(b.unitsPerSale!==1 ? `ขาย ${b.soldQty} (หักสต๊อก ${b.sold})` : `ขาย ${b.sold}`);
    if(b.def) parts.push(`Defect ${b.def}`);
    if(b.sb) parts.push(`SkyBoss ${b.sb}`);
    if(b.pbm) parts.push(`PBM ${b.pbm}`);
