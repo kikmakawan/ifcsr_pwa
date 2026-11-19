@@ -240,6 +240,8 @@ const SECTIONS=[
  items:[['COFFEE MATE/CREAMER',20,0],['SUGAR',20,0],['HOT WATER',0,30],['TWININGS EARL GREY',10,80],['TWININGS PEACH TEA',10,80],['VZ MEDIUM ROAST DRIP COFFEE',10,90],['VZ DARK ROAST DRIP COFFEE',10,90],['KHAOSHONG ICED AMERICANO x3',24,90],['SCHWEPPES MANAO SODA',2,60],['COKE ORIGINAL',10,60],['COKE ZERO SUGAR',4,60],['COKE ZERO ZERO',10,60],['SPRITE ORIGINAL',4,60],['OVALTINE UHT',4,60],['333 BEER',4,150],['SAIGON SPECIAL BEER',4,200],['CHANG CLASSIC BEER',4,150],['CHANG COLD BREW',4,200],['VZ WATER 330ML',48,40]]},
 {id:'snack',name:'Instant Meals & Snacks',tierLabels:['Price'],tierPrices:null,
  items:[['MAMA PORK FLAVOUR',18,70],['MAMA SHRIMP TOM YAM',18,70],['SAMYANG VEGETASTY NOODLE',4,80],['PRINGLES ORIGINAL POTATO',14,70],['PRINGLES SOUR CREAM POTATO',14,70],['M&M MILK CHOCOLATE',14,80],['MACADAMIA SALTED PACK',4,70],['MACADAMIA TRUFFLE PACK',4,70],['MACADAMIA SHALLOT PACK',4,70],['MACADAMIA WASABI PACK',4,70],['MACADAMIA SALTED BOX',2,440],['MACADAMIA TRUFFLE BOX',2,440],['MACADAMIA SHALLOT BOX',2,440],['MACADAMIA WASABI BOX',2,440],['MADAME THAI MANGO CHEWY CUBE',10,110]]},
+{id:'promo',name:'Promotion & Campaign',tierLabels:['Price'],tierPrices:null,
+ items:[]},
 {id:'merch',name:'Merchandise',tierLabels:['Price'],tierPrices:null,
  items:[['T-SHIRT RED (MEN) M',1,350],['T-SHIRT RED (MEN) L',1,350],['T-SHIRT RED (MEN) XL',1,350],['T-SHIRT WHITE (MEN) M',1,350],['T-SHIRT WHITE (MEN) L',1,350],['T-SHIRT WHITE (MEN) XL',1,350],['T-SHIRT NAVY (MEN) M',1,350],['T-SHIRT NAVY (MEN) L',1,350],['T-SHIRT NAVY (MEN) XL',1,350],
  ['VIETJET AIRCRAFT MODEL 1:200',2,690],['SUNSHINE AIRCRAFT PLUSH TOY',1,250],["KEYCHAIN BAG TAG 'REMOVE BEFORE FLT'",2,70],['VIETJET COOLER FLASK RED',2,280],['CAPTAIN KEYCHAIN',5,70],['CABIN CREW KEYCHAIN',5,70],['VIETJET CAP BLACK',2,250],['VIETJET CAP RED',2,250],['VIETJET CARRY BAG BLACK',1,390],['VIETJET CARRY BAG RED',1,390],['DTAC HAPPY TOURIST SIM',10,299],
@@ -550,7 +552,11 @@ function renderItemCard(sec,entry){
 
 function renderSection(sec){
  let html='';
- getItems(sec).forEach(entry=>{ html+=renderItemCard(sec,entry); });
+ const entries=getItems(sec);
+ if(entries.length===0){
+  html+=`<div class="sumempty">ยังไม่มีรายการในหมวดนี้ — เลื่อนลงไปที่การ์ด "➕ เพิ่มรายการสินค้าใหม่ / เมนูอัปเดต" ด้านล่างหน้าแรก เลือกหมวด "${sec.name}" แล้วกรอกชื่อ/ราคาโปรโมชั่นได้เลยครับ</div>`;
+ }
+ entries.forEach(entry=>{ html+=renderItemCard(sec,entry); });
  return html;
 }
 
