@@ -881,6 +881,12 @@ function buildSummaryPlainText(){
  lines.push(`Date: ${g('date','')||'-'}   Flight: ${g('flight','')||'-'}   Sector: ${g('sector','')||'-'}   โหมด: ${flightMode}`);
  lines.push(`Merchandise ${document.getElementById('gMerch').textContent} · Seats ${document.getElementById('gSeat').textContent} · F&B ${document.getElementById('gFB').textContent} · Voucher -${document.getElementById('gVoucher').textContent} -> Grand Total ${document.getElementById('gGrand').textContent}`);
  lines.push('');
+ lines.push('ข้อมูลเที่ยวบิน / ลูกเรือ:');
+ collectHdrRows().forEach(([l,v])=>lines.push(`  ${l}: ${v}`));
+ lines.push('');
+ lines.push('Seal:');
+ collectSealRows().forEach(([l,v])=>lines.push(`  ${l}: ${v}`));
+ lines.push('');
  let any=false;
  SECTIONS.forEach(sec=>{
   const secLines=[];
@@ -955,9 +961,19 @@ function itemBreakdown(sid,idx){
  const hasAny = (act!==0||sold!==0||def!==0||sb!==0||pbm!==0||combo!==0||recountTouched);
  return {name:entry.name,act,sold,def,sb,pbm,combo,crewCls,hasAny,custom:entry.custom,recount,recountTouched,variance};
 }
+function collectHdrRows(){
+ return HDR.filter(([k])=>k!=='date').map(([k,label])=>[label, g(k,'')||'-']);
+}
+function collectSealRows(){
+ return SEAL.map(([k,label])=>[label, g(k,'')||'-']);
+}
 function showSummary(){
  let html = `<div class="sumtop"><b>Date:</b> ${g('date','')||'-'} &nbsp; <b>Flight:</b> ${g('flight','')||'-'} &nbsp; <b>Sector:</b> ${g('sector','')||'-'} &nbsp; <b>โหมด:</b> ${flightMode}</div>`;
  html += `<div class="sumtop"><b>Merchandise</b> ${document.getElementById('gMerch').textContent} · <b>Seats</b> ${document.getElementById('gSeat').textContent} · <b>F&amp;B</b> ${document.getElementById('gFB').textContent} · <b>Voucher</b> -${document.getElementById('gVoucher').textContent} → <b>Grand Total ${document.getElementById('gGrand').textContent}</b></div>`;
+ const hdrRowsHtml = collectHdrRows().map(([l,v])=>`<div class="sumitem">${l}: ${v}</div>`).join('');
+ html += `<div class="sumsection"><h3>ข้อมูลเที่ยวบิน / ลูกเรือ</h3>${hdrRowsHtml}</div>`;
+ const sealRowsHtml = collectSealRows().map(([l,v])=>`<div class="sumitem">${l}: ${v}</div>`).join('');
+ html += `<div class="sumsection"><h3>Seal</h3>${sealRowsHtml}</div>`;
  let anyCounted=false;
  SECTIONS.forEach(sec=>{
   let rows='';
