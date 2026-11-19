@@ -109,6 +109,7 @@ input.priceInput{width:58px!important;height:26px;text-align:center;border:1px s
 .rcLabel{font-size:.62rem;color:#888;white-space:nowrap;}
 input.rcInput{width:38px!important;height:30px;text-align:center;border:1px solid var(--border);border-radius:6px;font-size:.85rem;padding:0;flex:0 0 auto;}
 .rcStatus{font-size:.64rem;white-space:nowrap;}
+.linkSelect{width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;background:#fff;}
 .b-backup{background:#eee;color:#444;text-align:center;}
 @media print{
  body.printMode > header, body.printMode > .wrap, body.printMode > .btnbar{display:none !important;}
@@ -217,7 +218,9 @@ input.rcInput{width:38px!important;height:30px;text-align:center;border:1px soli
 <script>
 const HDR=[['date','Date','date'],['flight','Flight No','text'],['sector','Sector','text'],['acreg','A/C Reg','text'],
 ['p1n','P1 Name','text'],['p1id','P1 ID','text'],['p2n','P2 Name','text'],['p2id','P2 ID','text'],
-['p3n','P3 Name','text'],['p3id','P3 ID','text'],['p4n','P4 Name','text'],['p4id','P4 ID','text']];
+['p2an','P2A Name','text'],['p2aid','P2A ID','text'],
+['p3n','P3 Name','text'],['p3id','P3 ID','text'],['p4n','P4 Name','text'],['p4id','P4 ID','text'],
+['p5n','P5 Name','text'],['p5id','P5 ID','text']];
 const SEAL=[['fbOpen','F&B Seal Open','text'],['fbClose','F&B Seal Close','text'],['merOpen','Merchandise Seal Open','text'],['merClose','Merchandise Seal Close','text']];
 
 const SECTIONS=[
@@ -333,6 +336,49 @@ function buildSearchIndex(){
 }
 buildSearchIndex();
 buildNewItemSecSelect();
+
+// ===== Combo auto-link: selling a "Combo" tier of a meal auto-deducts the bundled drink's stock =====
+function comboTierIndices(sec,entry){
+ // returns tier indexes whose label contains the word "Combo" — only meaningful for built-in tiered items
+ if(entry.custom) return [];
+ const shared = effTiers(sec);
+ if(!shared) return [];
+ const idxs=[];
+ shared.forEach((t,ti)=>{ if(t[0] && /combo/i.test(t[0])) idxs.push(ti); });
+ return idxs;
+}
+function comboSoldQty(sid,idxKey){
+ const sec=SECTIONS.find(s=>s.id===sid); if(!sec) return 0;
+ const entry=getItems(sec).find(e=>e.idxKey===String(idxKey)); if(!entry) return 0;
+ const tis=comboTierIndices(sec,entry);
+ let q=0; tis.forEach(ti=>{ q+=g(itemKey(sid,idxKey,ti,'d'),0)+g(itemKey(sid,idxKey,ti,'i'),0); });
+ return q;
+}
+function getComboLink(sid,idxKey){ return g(`link_${sid}_${idxKey}`,''); }
+function setComboLink(sid,idxKey,val){
+ set(`link_${sid}_${idxKey}`, val||'');
+ recalcGrand();
+ if(currentModalSid===sid) openSectionModal(sid);
+}
+function autoComboFor(targetSid,targetIdx){
+ const targetBase=`${targetSid}_${targetIdx}`;
+ let total=0; const contributions=[];
+ Object.keys(STATE).forEach(k=>{
+  if(!k.startsWith('link_')) return;
+  if(STATE[k]!==targetBase) return;
+  const rest=k.slice(5); // 'link_'.length
+  const us=rest.indexOf('_');
+  const srcSid=rest.slice(0,us), srcIdx=rest.slice(us+1);
+  const qty=comboSoldQty(srcSid,srcIdx);
+  if(qty>0){
+   const srcSec=SECTIONS.find(s=>s.id===srcSid);
+   const srcEntry=srcSec? getItems(srcSec).find(e=>e.idxKey===srcIdx) : null;
+   contributions.push({name: srcEntry?srcEntry.name:srcIdx, qty});
+   total+=qty;
+  }
+ });
+ return {total,contributions};
+}
 
 function buildHdrGrid(list,wrapId){
  const el=document.getElementById(wrapId); el.innerHTML='';
@@ -474,11 +520,27 @@ function renderItemCard(sec,entry){
  const base=`${sec.id}_${idx}`;
  const actK=base+'_act', defK=base+'_def', sbK=base+'_sb', pbmK=base+'_pbm', comboK=base+'_combo', recountK=base+'_recount';
  const actualRow=`<div class="actualrow"><span class="actuallabel">① Actual <span class="actualsub">(นับของจากสต๊อกจริง)</span></span>${qtyInputHtml(actK,g(actK,0))}</div>`;
+ const linkTiers = comboTierIndices(sec, entry);
+ let linkRow='';
+ if(linkTiers.length){
+  const curLink = getComboLink(sec.id, idx);
+  const opts = ['<option value="">— ไม่ผูก —</option>'];
+  SECTIONS.forEach(s2=>{
+   getItems(s2).forEach(e2=>{
+    const val2 = `${s2.id}_${e2.idxKey}`;
+    if(val2 === base) return;
+    const sel = (val2===curLink) ? ' selected' : '';
+    opts.push(`<option value="${val2}"${sel}>${s2.name}: ${e2.name}</option>`);
+   });
+  });
+  linkRow = `<div class="tierrow" style="flex-direction:column;align-items:flex-start;gap:4px;"><span class="tierlabel">🔗 เมนูนี้ราคา Combo พ่วงเครื่องดื่ม/ของหวาน — ผูกไว้เพื่อตัดสต๊อกอัตโนมัติ</span><select class="linkSelect" onchange="setComboLink('${sec.id}','${idx}',this.value)">${opts.join('')}</select></div>`;
+ }
  const extra=`<details class="subdet"><summary>Defect / Sky Boss / PBM / Combo ▾</summary>
   <div class="tierrow"><span class="tierlabel">Defect (ของเสีย)</span>${qtyInputHtml(defK,g(defK,0))}</div>
   <div class="tierrow"><span class="tierlabel">Sky Boss (แจกฟรี)</span>${qtyInputHtml(sbK,g(sbK,0))}</div>
   <div class="tierrow"><span class="tierlabel">PBM</span>${qtyInputHtml(pbmK,g(pbmK,0))}</div>
-  <div class="tierrow"><span class="tierlabel">Combo (พ่วงเซ็ตอาหารอื่น)</span>${qtyInputHtml(comboK,g(comboK,0))}</div>
+  <div class="tierrow"><span class="tierlabel">Combo เพิ่มเติม (กรอกเองถ้าไม่ได้มาจากเมนูที่ผูกไว้)</span>${qtyInputHtml(comboK,g(comboK,0))}</div>
+  ${linkRow}
   <div class="tierrow"><span class="tierlabel">② นับเหลือจริงก่อนลง (ไม่บังคับ)</span>${qtyInputHtml(recountK,g(recountK,0))}</div>
   <div class="note" id="chk_${base}"></div>
  </details>`;
@@ -537,7 +599,9 @@ function recalcSection(sid){
   const cell=document.getElementById(`rt_${sid}_${idx}`); if(cell) cell.textContent=rowSum.toLocaleString()+'฿';
   secSum+=rowSum;
   const base=`${sid}_${idx}`;
-  const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), combo=g(base+'_combo',0);
+  const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), manualCombo=g(base+'_combo',0);
+  const auto=autoComboFor(sid,idx);
+  const combo = manualCombo + auto.total;
   let sold=0; tiersBase.forEach((t,ti)=>{ sold+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
   const crewCls = act - sold - def - sb - pbm - combo;
   const recount = g(base+'_recount',0), recountTouched = g(base+'_recount_touched',false);
@@ -546,6 +610,9 @@ function recalcSection(sid){
   if(chkCell){
    const neg = crewCls<0;
    let html=`ขาย ${sold} + Defect ${def} + SkyBoss ${sb} + PBM ${pbm} + Combo ${combo} → <b>Crew Cls (คำนวณอัตโนมัติ) = ${crewCls}</b> ${neg?'⚠️ ติดลบ (ใส่ Actual ไม่พอ หรือกรอกขายเกิน)':'✅'}`;
+   if(auto.total>0){
+    html += `<br>🔗 ตัดอัตโนมัติจาก Combo ที่ผูกไว้: +${auto.total} (${auto.contributions.map(c=>c.name+' x'+c.qty).join(', ')})`;
+   }
    if(recountTouched){
     if(variance===0) html += `<br>✅ นับเหลือจริงก่อนลง ${recount} ตรงกับที่คำนวณไว้ ครบถ้วน`;
     else if(variance<0) html += `<br>⚠️ นับเหลือจริงได้ ${recount} แต่คำนวณไว้ ${crewCls} → <b>ขาดไป ${Math.abs(variance)} ชิ้น</b> (อาจขายไปแล้วไม่ได้บันทึก)`;
@@ -782,7 +849,9 @@ function itemBreakdown(sid,idx){
  const shared = entry.custom ? null : effTiers(sec);
  const myTiers = shared || [[null,entry.price]];
  const base=`${sid}_${idx}`;
- const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), combo=g(base+'_combo',0);
+ const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), manualCombo=g(base+'_combo',0);
+ const auto=autoComboFor(sid,idx);
+ const combo = manualCombo + auto.total;
  let sold=0; myTiers.forEach((t,ti)=>{ sold+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
  const crewCls = act-sold-def-sb-pbm-combo;
  const recount = g(base+'_recount',0), recountTouched = g(base+'_recount_touched',false);
