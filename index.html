@@ -235,7 +235,8 @@ const SECTIONS=[
 {id:'hm1',name:'Hot Meals (Briyani Set)',tierLabels:['Combo280','Combo240','Single200','Single170(15%)','Single100(50%)'],tierPrices:[280,240,200,170,100],
  items:[['CHICKEN BRIYANI',0],['VEGETARIAN BRIYANI',0],['BENJA CHICKEN RICE',2]]},
 {id:'hm2',name:'Hot Meals (Main Set)',tierLabels:['Combo260 (คู่น้ำส้ม/อเมริกาโน่)','Combo220 (คู่โค้ก)','Single180','Single155(15%)','Single90(50%)'],tierPrices:[260,220,180,155,90],
- items:[['CHICKEN TERIYAKI',2],['SPICY CHICKEN BASIL',1],['ROASTED CHICKEN NOODLE',2],['VEGETARIAN FRIED RICE',0],['KOREAN CHICKEN RICE',1],['THAI BOAT NOODLE',2],['SPAGHETTI WITH ROASTED DUCK',2],['CHICKEN GREEN CURRY',1],['STIR-FRIED FLAT NOODLE',1]]},
+ items:[['CHICKEN TERIYAKI',2],['SPICY CHICKEN BASIL',1],['ROASTED CHICKEN NOODLE',2],['VEGETARIAN FRIED RICE',0],['KOREAN CHICKEN RICE',1],['THAI BOAT NOODLE',2],['SPAGHETTI WITH ROASTED DUCK',2],['CHICKEN GREEN CURRY',1],['STIR-FRIED FLAT NOODLE',1],
+ ['VZ WATER 330ML (PBM)',0],['WATER FOR CHARTER FLT',0]]},
 {id:'tpe',name:'TPE Hot Meals (เฉพาะเที่ยวบิน TPE)',tierLabels:['Combo390','Single360'],tierPrices:[390,360],
  items:[['NOODLES WITH MINCED CHICKEN',0],['FRIED HAINANESE CHICKEN RICE MIX',0],['STIR FRIED BAMBOO SHOOT',0],['TEMPLE NOODLES WITH SEAFOOD',2],['WINE-MARINATED CATFISH WITH BASIL',3],['BRAISED CHICKEN WITH CURRY SAUCE',2],['WATER 200ML (PBM, LOAD AT TPE)',24]]},
 {id:'dessert',name:'Dessert',tierLabels:['Price'],tierPrices:null,
@@ -247,7 +248,7 @@ const SECTIONS=[
  ['OVALTINE 3 IN 1',10,60],['TIPCO ORANGE JUICE',4,60]]},
 {id:'snack',name:'Instant Meals & Snacks',tierLabels:['Price'],tierPrices:null,
  items:[['MAMA PORK FLAVOUR',18,70],['MAMA SHRIMP TOM YAM',18,70],['SAMYANG VEGETASTY NOODLE',4,80],['PRINGLES ORIGINAL POTATO',14,70],['PRINGLES SOUR CREAM POTATO',14,70],['M&M MILK CHOCOLATE',14,80],['MACADAMIA SALTED PACK',4,70],['MACADAMIA TRUFFLE PACK',4,70],['MACADAMIA SHALLOT PACK',4,70],['MACADAMIA WASABI PACK',4,70],['MACADAMIA SALTED BOX',2,440],['MACADAMIA TRUFFLE BOX',2,440],['MACADAMIA SHALLOT BOX',2,440],['MACADAMIA WASABI BOX',2,440],['MADAME THAI MANGO CHEWY CUBE',10,110]]},
-{id:'promo',name:'Promotion & Campaign',tierLabels:['Price'],tierPrices:null,
+{id:'promo',name:'Promotion & Campaign',tierLabels:['Price'],tierPrices:null,noStockTracking:true,
  items:[['MAMA PORK FLAVOUR+COKE ORIGINAL',0,100],['MAMA PORK FLAVOUR+COKE ZERO',0,100],
  ['MAMA SHIRMP TOM YAM+COKE ORIGINAL',0,100],['MAMA SHIRMP TOM YAM+COKE ZERO',0,100],
  ['Pringles Original Potato Crisps + Coke',0,100],['Pringles Sour Cream Potato Crisps + Coke',0,100],
@@ -510,12 +511,36 @@ function doSearch(q){
  if(matches.length===0){ box.innerHTML='<div class="searchempty">ไม่พบรายการที่ตรงกับ "'+q+'"</div>'; return; }
  box.innerHTML=matches.map(r=>{
   const base=`${r.sid}_${r.idx}`;
+  const sec=SECTIONS.find(s=>s.id===r.sid);
+  const noTrack = !!(sec && sec.noStockTracking);
+  const b=itemBreakdown(r.sid,r.idx);
+  const detailId=`searchdetail_${base}`;
+  if(noTrack){
+   // sell-only item (e.g. Promotion & Campaign bundle) — no Actual/Crew Close/recount here,
+   // the stepper directly logs a sale (DOM qty, or INT when flying INT mode).
+   const sellKey=itemKey(r.sid,r.idx,0, flightMode==='INT' ? 'i' : 'd');
+   const uid=`search_sell_${base}`;
+   const val=g(sellKey,0);
+   return `<div class="searchrow">
+    <div class="searchinfo"><span class="searchname">${r.name}<span class="searchtag">${r.secName}</span></span><span class="searchmeta">โปรโมชั่น — กดขายได้เลย · ขายแล้ว <b id="search_sold_${base}">${b.soldQty}</b></span></div>
+    <div class="searchControls">
+     <div class="qtygrp">
+      <button type="button" class="stepbtn" onclick="searchBumpPromo('${r.sid}','${r.idx}',-1)">−</button>
+      <input class="qtyinput" type="text" inputmode="numeric" id="${uid}" value="${val}" oninput="searchBumpPromoSet('${r.sid}','${r.idx}',this.value)">
+      <button type="button" class="stepbtn" onclick="searchBumpPromo('${r.sid}','${r.idx}',1)">+</button>
+     </div>
+    </div>
+    <div class="searchActions">
+     <button type="button" class="searchopen" onclick="toggleSearchDetail('${detailId}','${r.sid}','${r.idx}')">📝 รายละเอียด/ผูก Combo ▾</button>
+     <button type="button" class="searchopen" onclick="openSectionModal('${r.sid}')">เปิดหมวด ›</button>
+    </div>
+    <div id="${detailId}" class="searchDetailWrap" style="display:none;"></div>
+   </div>`;
+  }
   const key=`${base}_act`;
   const val=g(key,0);
   const uid=`search_${key}`;
-  const b=itemBreakdown(r.sid,r.idx);
   const ccId=`search_cc_${base}`;
-  const detailId=`searchdetail_${base}`;
   const recountVal=g(`${base}_recount`,0);
   let rcStatusHtml='';
   if(b.recountTouched){
@@ -542,6 +567,23 @@ function doSearch(q){
    <div id="${detailId}" class="searchDetailWrap" style="display:none;"></div>
   </div>`;
  }).join('');
+}
+function searchBumpPromo(sid,idx,delta){
+ const key=itemKey(sid,idx,0, flightMode==='INT' ? 'i' : 'd');
+ let v=(g(key,0))+delta; if(v<0)v=0;
+ set(key,v); recalcSection(sid); recalcGrand();
+ const sEl=document.getElementById(`search_sell_${sid}_${idx}`); if(sEl) sEl.value=v;
+ const mEl=document.getElementById(key); if(mEl) mEl.value=v;
+ const soldEl=document.getElementById(`search_sold_${sid}_${idx}`);
+ if(soldEl) soldEl.textContent=itemBreakdown(sid,idx).soldQty;
+}
+function searchBumpPromoSet(sid,idx,val){
+ const key=itemKey(sid,idx,0, flightMode==='INT' ? 'i' : 'd');
+ const v=parseFloat(val)||0;
+ set(key,v); recalcSection(sid); recalcGrand();
+ const mEl=document.getElementById(key); if(mEl) mEl.value=v;
+ const soldEl=document.getElementById(`search_sold_${sid}_${idx}`);
+ if(soldEl) soldEl.textContent=itemBreakdown(sid,idx).soldQty;
 }
 function toggleSearchDetail(detailId,sid,idx){
  const el=document.getElementById(detailId); if(!el) return;
@@ -598,9 +640,10 @@ function renderItemCard(sec,entry){
  });
  const base=`${sec.id}_${idx}`;
  const actK=base+'_act', defK=base+'_def', sbK=base+'_sb', pbmK=base+'_pbm', comboK=base+'_combo', recountK=base+'_recount';
- const actualRow=`<div class="actualrow"><span class="actuallabel">① Actual <span class="actualsub">(นับของจากสต๊อกจริง)</span></span>${qtyInputHtml(actK,g(actK,0))}</div>`;
- const autoNote=`<div class="autoComboNote" id="autonote_${base}" style="display:none;"></div>`;
- const recipeNote = (entry.unitsPerSale && entry.unitsPerSale!==1)
+ const noTrack = !!sec.noStockTracking;
+ const actualRow = noTrack ? '' : `<div class="actualrow"><span class="actuallabel">① Actual <span class="actualsub">(นับของจากสต๊อกจริง)</span></span>${qtyInputHtml(actK,g(actK,0))}</div>`;
+ const autoNote = noTrack ? '' : `<div class="autoComboNote" id="autonote_${base}" style="display:none;"></div>`;
+ const recipeNote = (!noTrack && entry.unitsPerSale && entry.unitsPerSale!==1)
   ? `<div class="recipeNote">📦 ขายนับเป็น "แก้ว/ชุด" แต่หักสต๊อกเป็น <b>${entry.unitsPerSale}</b> หน่วยต่อ 1 ที่ขาย (เช่น ขาย 1 แก้ว → หักสต๊อก ${entry.unitsPerSale}) — ตอนนับ Actual/เหลือจริง ให้นับเป็นจำนวนที่มีอยู่จริงในสต๊อก ไม่ใช่จำนวนแก้วที่ชงขายได้</div>`
   : '';
  let linkRow='';
@@ -627,17 +670,26 @@ function renderItemCard(sec,entry){
    <select class="linkSelect" onchange="if(this.value){addComboLink('${sec.id}','${idx}',this.value);this.value='';}">${opts.join('')}</select>
   </div>`;
  }
- const extra=`<details class="subdet"><summary>Defect / Sky Boss / PBM / Combo ▾</summary>
-  <div class="tierrow"><span class="tierlabel">Defect (ของเสีย)</span>${qtyInputHtml(defK,g(defK,0))}</div>
-  <div class="tierrow"><span class="tierlabel">Sky Boss (แจกฟรี)</span>${qtyInputHtml(sbK,g(sbK,0))}</div>
-  <div class="tierrow"><span class="tierlabel">PBM</span>${qtyInputHtml(pbmK,g(pbmK,0))}</div>
-  <div class="tierrow"><span class="tierlabel">Combo เพิ่มเติม (กรอกเองถ้าไม่ได้มาจากเมนูที่ผูกไว้)</span>${qtyInputHtml(comboK,g(comboK,0))}</div>
-  ${linkRow}
-  <div class="tierrow"><span class="tierlabel">② นับเหลือจริงก่อนลง (ไม่บังคับ)</span>${qtyInputHtml(recountK,g(recountK,0))}</div>
-  <div class="note" id="chk_${base}"></div>
- </details>`;
+ let extra;
+ if(noTrack){
+  // Promotion & Campaign items (and any other noStockTracking section): just a sell counter + the
+  // combo-link setup. No Actual/Defect/SkyBoss/PBM/recount — that reconciliation happens on the real
+  // stock items this bundle is linked to, not on the bundle itself.
+  extra = `${linkRow}<div class="note" id="chk_${base}"></div>`;
+ } else {
+  extra = `<details class="subdet"><summary>Defect / Sky Boss / PBM / Combo ▾</summary>
+   <div class="tierrow"><span class="tierlabel">Defect (ของเสีย)</span>${qtyInputHtml(defK,g(defK,0))}</div>
+   <div class="tierrow"><span class="tierlabel">Sky Boss (แจกฟรี)</span>${qtyInputHtml(sbK,g(sbK,0))}</div>
+   <div class="tierrow"><span class="tierlabel">PBM</span>${qtyInputHtml(pbmK,g(pbmK,0))}</div>
+   <div class="tierrow"><span class="tierlabel">Combo เพิ่มเติม (กรอกเองถ้าไม่ได้มาจากเมนูที่ผูกไว้)</span>${qtyInputHtml(comboK,g(comboK,0))}</div>
+   ${linkRow}
+   <div class="tierrow"><span class="tierlabel">② นับเหลือจริงก่อนลง (ไม่บังคับ)</span>${qtyInputHtml(recountK,g(recountK,0))}</div>
+   <div class="note" id="chk_${base}"></div>
+  </details>`;
+ }
  const delBtn = entry.custom ? `<button type="button" class="delBtn" onclick="deleteCustomItem('${sec.id}','${entry.cid}')">ลบ ✕</button>` : '';
- return `<div class="itemcard"><div class="itemhead"><span class="itemname">${name}${entry.custom?' <span class="customtag">ใหม่</span>':''}</span><span class="par">Par ${par}</span>${delBtn}<span class="rowtot" id="rt_${sec.id}_${idx}">0฿</span></div>${actualRow}${recipeNote}${autoNote}${rows}${extra}</div>`;
+ const parBadge = noTrack ? `<span class="par">โปรโมชั่น — กดขายได้เลย</span>` : `<span class="par">Par ${par}</span>`;
+ return `<div class="itemcard"><div class="itemhead"><span class="itemname">${name}${entry.custom?' <span class="customtag">ใหม่</span>':''}</span>${parBadge}${delBtn}<span class="rowtot" id="rt_${sec.id}_${idx}">0฿</span></div>${actualRow}${recipeNote}${autoNote}${rows}${extra}</div>`;
 }
 
 function renderSection(sec){
@@ -695,6 +747,19 @@ function recalcSection(sid){
   const cell=document.getElementById(`rt_${sid}_${idx}`); if(cell) cell.textContent=rowSum.toLocaleString()+'฿';
   secSum+=rowSum;
   const base=`${sid}_${idx}`;
+  if(sec.noStockTracking){
+   // no Actual/Defect/SkyBoss/PBM/Crew Close for this item — it's a sell-only bundle whose
+   // real stock deduction happens on the linked item(s) instead.
+   let soldQty=0; tiersBase.forEach((t,ti)=>{ soldQty+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
+   const chkCell=document.getElementById(`chk_${base}`);
+   if(chkCell){
+    chkCell.innerHTML = soldQty>0
+     ? `✅ ขายไปแล้ว ${soldQty} ชิ้น (${rowSum.toLocaleString()}฿) — ไม่ต้องนับสต๊อก/Crew Close รายการนี้ เพราะหักจากสต๊อกของจริงที่ผูกไว้ให้แล้ว`
+     : `ยังไม่มีการขาย`;
+    chkCell.style.color = '#2e7d32';
+   }
+   return;
+  }
   const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), manualCombo=g(base+'_combo',0);
   const auto=autoComboFor(sid,idx);
   const combo = manualCombo + auto.total;
@@ -907,13 +972,17 @@ function buildSummaryPlainText(){
    if(!b.hasAny) return;
    any=true;
    const parts=[];
-   if(b.act) parts.push(`Actual ${b.act}`);
-   if(b.sold) parts.push(b.unitsPerSale!==1 ? `ขาย ${b.soldQty} (หักสต๊อก ${b.sold})` : `ขาย ${b.sold}`);
-   if(b.def) parts.push(`Defect ${b.def}`);
-   if(b.sb) parts.push(`SkyBoss ${b.sb}`);
-   if(b.pbm) parts.push(`PBM ${b.pbm}`);
-   if(b.combo) parts.push(`Combo ${b.combo}`);
-   parts.push(`Crew Close ${b.crewCls}`);
+   if(b.noStockTracking){
+    parts.push(`ขาย ${b.soldQty}`);
+   } else {
+    if(b.act) parts.push(`Actual ${b.act}`);
+    if(b.sold) parts.push(b.unitsPerSale!==1 ? `ขาย ${b.soldQty} (หักสต๊อก ${b.sold})` : `ขาย ${b.sold}`);
+    if(b.def) parts.push(`Defect ${b.def}`);
+    if(b.sb) parts.push(`SkyBoss ${b.sb}`);
+    if(b.pbm) parts.push(`PBM ${b.pbm}`);
+    if(b.combo) parts.push(`Combo ${b.combo}`);
+    parts.push(`Crew Close ${b.crewCls}`);
+   }
    secLines.push(`  ${b.name}${b.custom?' (ใหม่)':''} — ${parts.join(' · ')}`);
   });
   if(secLines.length){ lines.push(sec.name+':'); lines.push(...secLines); lines.push(''); }
@@ -963,6 +1032,10 @@ function itemBreakdown(sid,idx){
  const shared = entry.custom ? null : effTiers(sec);
  const myTiers = shared || [[null,entry.price]];
  const base=`${sid}_${idx}`;
+ if(sec.noStockTracking){
+  let soldQty=0; myTiers.forEach((t,ti)=>{ soldQty+=g(itemKey(sid,idx,ti,'d'),0)+g(itemKey(sid,idx,ti,'i'),0); });
+  return {name:entry.name,act:0,sold:soldQty,soldQty,unitsPerSale:1,def:0,sb:0,pbm:0,combo:0,crewCls:null,hasAny:soldQty!==0,custom:entry.custom,recount:0,recountTouched:false,variance:null,noStockTracking:true};
+ }
  const act=g(base+'_act',0), def=g(base+'_def',0), sb=g(base+'_sb',0), pbm=g(base+'_pbm',0), manualCombo=g(base+'_combo',0);
  const auto=autoComboFor(sid,idx);
  const combo = manualCombo + auto.total;
@@ -973,7 +1046,7 @@ function itemBreakdown(sid,idx){
  const recount = g(base+'_recount',0), recountTouched = g(base+'_recount_touched',false);
  const variance = recountTouched ? (recount-crewCls) : null;
  const hasAny = (act!==0||sold!==0||def!==0||sb!==0||pbm!==0||combo!==0||recountTouched);
- return {name:entry.name,act,sold,soldQty,unitsPerSale,def,sb,pbm,combo,crewCls,hasAny,custom:entry.custom,recount,recountTouched,variance};
+ return {name:entry.name,act,sold,soldQty,unitsPerSale,def,sb,pbm,combo,crewCls,hasAny,custom:entry.custom,recount,recountTouched,variance,noStockTracking:false};
 }
 function collectHdrRows(){
  return HDR.filter(([k])=>k!=='date').map(([k,label])=>[label, g(k,'')||'-']);
@@ -996,17 +1069,21 @@ function showSummary(){
    if(!b.hasAny) return;
    anyCounted=true;
    const parts=[];
-   if(b.act) parts.push(`Actual ${b.act}`);
-   if(b.sold) parts.push(b.unitsPerSale!==1 ? `ขาย ${b.soldQty} (หักสต๊อก ${b.sold})` : `ขาย ${b.sold}`);
-   if(b.def) parts.push(`Defect ${b.def}`);
-   if(b.sb) parts.push(`SkyBoss ${b.sb}`);
-   if(b.pbm) parts.push(`PBM ${b.pbm}`);
-   if(b.combo) parts.push(`Combo ${b.combo}`);
-   parts.push(`<b>Crew Close ${b.crewCls}</b>`);
-   if(b.recountTouched){
-    if(b.variance===0) parts.push(`<span class="varianceOk">นับเหลือจริง ${b.recount} ✅ ตรงกัน</span>`);
-    else if(b.variance<0) parts.push(`<span class="varianceBad">นับเหลือจริง ${b.recount} ⚠️ ขาด ${Math.abs(b.variance)}</span>`);
-    else parts.push(`<span class="varianceBad">นับเหลือจริง ${b.recount} ⚠️ เกิน ${b.variance}</span>`);
+   if(b.noStockTracking){
+    parts.push(`ขาย ${b.soldQty}`);
+   } else {
+    if(b.act) parts.push(`Actual ${b.act}`);
+    if(b.sold) parts.push(b.unitsPerSale!==1 ? `ขาย ${b.soldQty} (หักสต๊อก ${b.sold})` : `ขาย ${b.sold}`);
+    if(b.def) parts.push(`Defect ${b.def}`);
+    if(b.sb) parts.push(`SkyBoss ${b.sb}`);
+    if(b.pbm) parts.push(`PBM ${b.pbm}`);
+    if(b.combo) parts.push(`Combo ${b.combo}`);
+    parts.push(`<b>Crew Close ${b.crewCls}</b>`);
+    if(b.recountTouched){
+     if(b.variance===0) parts.push(`<span class="varianceOk">นับเหลือจริง ${b.recount} ✅ ตรงกัน</span>`);
+     else if(b.variance<0) parts.push(`<span class="varianceBad">นับเหลือจริง ${b.recount} ⚠️ ขาด ${Math.abs(b.variance)}</span>`);
+     else parts.push(`<span class="varianceBad">นับเหลือจริง ${b.recount} ⚠️ เกิน ${b.variance}</span>`);
+    }
    }
    rows += `<div class="sumitem">${b.name}${b.custom?' <span class="customtag">ใหม่</span>':''} — ${parts.join(' · ')}</div>`;
   });
