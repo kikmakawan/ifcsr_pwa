@@ -110,6 +110,9 @@ input.priceInput{width:58px!important;height:26px;text-align:center;border:1px s
 input.rcInput{width:38px!important;height:30px;text-align:center;border:1px solid var(--border);border-radius:6px;font-size:.85rem;padding:0;flex:0 0 auto;}
 .rcStatus{font-size:.64rem;white-space:nowrap;}
 .linkSelect{width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;background:#fff;}
+.linkChips{display:flex;flex-wrap:wrap;gap:4px;}
+.linkChip{display:inline-flex;align-items:center;gap:4px;background:#eef6ff;color:#15539e;border:1px solid #b9d7f7;border-radius:12px;padding:3px 8px;font-size:.68rem;}
+.linkChipX{cursor:pointer;color:#c62828;font-weight:700;}
 .b-backup{background:#eee;color:#444;text-align:center;}
 @media print{
  body.printMode > header, body.printMode > .wrap, body.printMode > .btnbar{display:none !important;}
@@ -241,7 +244,10 @@ const SECTIONS=[
 {id:'snack',name:'Instant Meals & Snacks',tierLabels:['Price'],tierPrices:null,
  items:[['MAMA PORK FLAVOUR',18,70],['MAMA SHRIMP TOM YAM',18,70],['SAMYANG VEGETASTY NOODLE',4,80],['PRINGLES ORIGINAL POTATO',14,70],['PRINGLES SOUR CREAM POTATO',14,70],['M&M MILK CHOCOLATE',14,80],['MACADAMIA SALTED PACK',4,70],['MACADAMIA TRUFFLE PACK',4,70],['MACADAMIA SHALLOT PACK',4,70],['MACADAMIA WASABI PACK',4,70],['MACADAMIA SALTED BOX',2,440],['MACADAMIA TRUFFLE BOX',2,440],['MACADAMIA SHALLOT BOX',2,440],['MACADAMIA WASABI BOX',2,440],['MADAME THAI MANGO CHEWY CUBE',10,110]]},
 {id:'promo',name:'Promotion & Campaign',tierLabels:['Price'],tierPrices:null,
- items:[]},
+ items:[['MAMA PORK FLAVOUR+COKE ORIGINAL',0,100],['MAMA PORK FLAVOUR+COKE ZERO',0,100],
+ ['MAMA SHIRMP TOM YAM+COKE ORIGINAL',0,100],['MAMA SHIRMP TOM YAM+COKE ZERO',0,100],
+ ['Pringles Original Potato Crisps + Coke',0,100],['Pringles Sour Cream Potato Crisps + Coke',0,100],
+ ['Pringles Original Potato Crisps + Coke Zero',0,100],['Pringles Sour Cream Potato Crisps + Zero',0,100]]},
 {id:'merch',name:'Merchandise',tierLabels:['Price'],tierPrices:null,
  items:[['T-SHIRT RED (MEN) M',1,350],['T-SHIRT RED (MEN) L',1,350],['T-SHIRT RED (MEN) XL',1,350],['T-SHIRT WHITE (MEN) M',1,350],['T-SHIRT WHITE (MEN) L',1,350],['T-SHIRT WHITE (MEN) XL',1,350],['T-SHIRT NAVY (MEN) M',1,350],['T-SHIRT NAVY (MEN) L',1,350],['T-SHIRT NAVY (MEN) XL',1,350],
  ['VIETJET AIRCRAFT MODEL 1:200',2,690],['SUNSHINE AIRCRAFT PLUSH TOY',1,250],["KEYCHAIN BAG TAG 'REMOVE BEFORE FLT'",2,70],['VIETJET COOLER FLASK RED',2,280],['CAPTAIN KEYCHAIN',5,70],['CABIN CREW KEYCHAIN',5,70],['VIETJET CAP BLACK',2,250],['VIETJET CAP RED',2,250],['VIETJET CARRY BAG BLACK',1,390],['VIETJET CARRY BAG RED',1,390],['DTAC HAPPY TOURIST SIM',10,299],
@@ -339,7 +345,7 @@ function buildSearchIndex(){
 buildSearchIndex();
 buildNewItemSecSelect();
 
-// ===== Combo auto-link: selling a "Combo" tier of a meal auto-deducts the bundled drink's stock =====
+// ===== Combo auto-link: selling a "Combo" tier, or a bundled promo item, auto-deducts the linked item(s)' stock =====
 function comboTierIndices(sec,entry){
  // returns tier indexes whose label contains the word "Combo" — only meaningful for built-in tiered items
  if(entry.custom) return [];
@@ -349,17 +355,46 @@ function comboTierIndices(sec,entry){
  shared.forEach((t,ti)=>{ if(t[0] && /combo/i.test(t[0])) idxs.push(ti); });
  return idxs;
 }
+// whether this item can act as a combo/bundle SOURCE (i.e. show the link UI): built-in meal items with a
+// "Combo" priced tier, any custom item, or any item inside the Promotion & Campaign category.
+function canLinkCombo(sec,entry){
+ return comboTierIndices(sec,entry).length>0 || entry.custom || sec.id==='promo';
+}
 function comboSoldQty(sid,idxKey){
  const sec=SECTIONS.find(s=>s.id===sid); if(!sec) return 0;
  const entry=getItems(sec).find(e=>e.idxKey===String(idxKey)); if(!entry) return 0;
  const tis=comboTierIndices(sec,entry);
- let q=0; tis.forEach(ti=>{ q+=g(itemKey(sid,idxKey,ti,'d'),0)+g(itemKey(sid,idxKey,ti,'i'),0); });
+ if(tis.length){
+  let q=0; tis.forEach(ti=>{ q+=g(itemKey(sid,idxKey,ti,'d'),0)+g(itemKey(sid,idxKey,ti,'i'),0); });
+  return q;
+ }
+ // no dedicated "Combo" tier (simple-priced item, e.g. a Promotion & Campaign bundle, or a custom item) —
+ // use its own total sold qty across its (single) price row instead.
+ const shared = entry.custom ? null : effTiers(sec);
+ const tiersBase = shared || [[null, entry.price]];
+ let q=0; tiersBase.forEach((t,ti)=>{ q+=g(itemKey(sid,idxKey,ti,'d'),0)+g(itemKey(sid,idxKey,ti,'i'),0); });
  return q;
 }
-function getComboLink(sid,idxKey){ return g(`link_${sid}_${idxKey}`,''); }
-function setComboLink(sid,idxKey,val){
- set(`link_${sid}_${idxKey}`, val||'');
- recalcGrand();
+// combo links support MULTIPLE targets per source (e.g. a promo combo bundles both a snack AND a drink).
+// stored as an array of 'sid_idx' target keys; old single-string format (from an earlier version) is still read.
+function parseLinkValue(v){
+ if(Array.isArray(v)) return v;
+ if(typeof v==='string' && v) return [v];
+ return [];
+}
+function getComboLinks(sid,idxKey){ return parseLinkValue(g(`link_${sid}_${idxKey}`, [])); }
+function addComboLink(sid,idxKey,target){
+ if(!target) return;
+ const arr=getComboLinks(sid,idxKey);
+ if(!arr.includes(target)) arr.push(target);
+ set(`link_${sid}_${idxKey}`, arr);
+ recalcSection(sid); recalcGrand();
+ if(currentModalSid===sid) openSectionModal(sid);
+}
+function removeComboLink(sid,idxKey,target){
+ const arr=getComboLinks(sid,idxKey).filter(v=>v!==target);
+ set(`link_${sid}_${idxKey}`, arr);
+ recalcSection(sid); recalcGrand();
  if(currentModalSid===sid) openSectionModal(sid);
 }
 function autoComboFor(targetSid,targetIdx){
@@ -367,7 +402,8 @@ function autoComboFor(targetSid,targetIdx){
  let total=0; const contributions=[];
  Object.keys(STATE).forEach(k=>{
   if(!k.startsWith('link_')) return;
-  if(STATE[k]!==targetBase) return;
+  const arr=parseLinkValue(STATE[k]);
+  if(!arr.includes(targetBase)) return;
   const rest=k.slice(5); // 'link_'.length
   const us=rest.indexOf('_');
   const srcSid=rest.slice(0,us), srcIdx=rest.slice(us+1);
@@ -381,6 +417,39 @@ function autoComboFor(targetSid,targetIdx){
  });
  return {total,contributions};
 }
+
+// ===== Default combo-link wiring for the built-in Promotion & Campaign bundle items =====
+// Each bundle auto-deducts its component items' stock when sold. Only applied once per source item
+// (if the crew ever manually re-links or unlinks it, STATE already has a key and we leave it alone).
+function findItemIdx(sid,name){
+ const sec=SECTIONS.find(s=>s.id===sid); if(!sec) return null;
+ const i=sec.items.findIndex(it=>it[0]===name);
+ return i===-1 ? null : String(i);
+}
+function applyDefaultComboLinks(){
+ const recipes=[
+  ['MAMA PORK FLAVOUR+COKE ORIGINAL', [['snack','MAMA PORK FLAVOUR'],['drinks','COKE ORIGINAL']]],
+  ['MAMA PORK FLAVOUR+COKE ZERO', [['snack','MAMA PORK FLAVOUR'],['drinks','COKE ZERO SUGAR']]],
+  ['MAMA SHIRMP TOM YAM+COKE ORIGINAL', [['snack','MAMA SHRIMP TOM YAM'],['drinks','COKE ORIGINAL']]],
+  ['MAMA SHIRMP TOM YAM+COKE ZERO', [['snack','MAMA SHRIMP TOM YAM'],['drinks','COKE ZERO SUGAR']]],
+  ['Pringles Original Potato Crisps + Coke', [['snack','PRINGLES ORIGINAL POTATO'],['drinks','COKE ORIGINAL']]],
+  ['Pringles Sour Cream Potato Crisps + Coke', [['snack','PRINGLES SOUR CREAM POTATO'],['drinks','COKE ORIGINAL']]],
+  ['Pringles Original Potato Crisps + Coke Zero', [['snack','PRINGLES ORIGINAL POTATO'],['drinks','COKE ZERO SUGAR']]],
+  ['Pringles Sour Cream Potato Crisps + Zero', [['snack','PRINGLES SOUR CREAM POTATO'],['drinks','COKE ZERO SUGAR']]],
+ ];
+ recipes.forEach(([promoName, targets])=>{
+  const promoIdx=findItemIdx('promo', promoName);
+  if(promoIdx===null) return;
+  const linkKey=`link_promo_${promoIdx}`;
+  if(STATE[linkKey]!==undefined) return; // already configured (default already applied, or user customized it)
+  const targetBases=targets.map(([sid,name])=>{
+   const idx=findItemIdx(sid,name);
+   return idx!==null ? `${sid}_${idx}` : null;
+  }).filter(Boolean);
+  if(targetBases.length) set(linkKey, targetBases);
+ });
+}
+applyDefaultComboLinks();
 
 function buildHdrGrid(list,wrapId){
  const el=document.getElementById(wrapId); el.innerHTML='';
@@ -522,20 +591,29 @@ function renderItemCard(sec,entry){
  const base=`${sec.id}_${idx}`;
  const actK=base+'_act', defK=base+'_def', sbK=base+'_sb', pbmK=base+'_pbm', comboK=base+'_combo', recountK=base+'_recount';
  const actualRow=`<div class="actualrow"><span class="actuallabel">① Actual <span class="actualsub">(นับของจากสต๊อกจริง)</span></span>${qtyInputHtml(actK,g(actK,0))}</div>`;
- const linkTiers = comboTierIndices(sec, entry);
  let linkRow='';
- if(linkTiers.length){
-  const curLink = getComboLink(sec.id, idx);
-  const opts = ['<option value="">— ไม่ผูก —</option>'];
+ if(canLinkCombo(sec, entry)){
+  const curLinks = getComboLinks(sec.id, idx);
+  const allEntries=[];
   SECTIONS.forEach(s2=>{
    getItems(s2).forEach(e2=>{
     const val2 = `${s2.id}_${e2.idxKey}`;
     if(val2 === base) return;
-    const sel = (val2===curLink) ? ' selected' : '';
-    opts.push(`<option value="${val2}"${sel}>${s2.name}: ${e2.name}</option>`);
+    allEntries.push({val:val2, label:`${s2.name}: ${e2.name}`});
    });
   });
-  linkRow = `<div class="tierrow" style="flex-direction:column;align-items:flex-start;gap:4px;"><span class="tierlabel">🔗 เมนูนี้ราคา Combo พ่วงเครื่องดื่ม/ของหวาน — ผูกไว้เพื่อตัดสต๊อกอัตโนมัติ</span><select class="linkSelect" onchange="setComboLink('${sec.id}','${idx}',this.value)">${opts.join('')}</select></div>`;
+  const chips = curLinks.map(v=>{
+   const found = allEntries.find(e=>e.val===v);
+   const label = found ? found.label : v;
+   return `<span class="linkChip">${label} <span class="linkChipX" onclick="removeComboLink('${sec.id}','${idx}','${v}')">✕</span></span>`;
+  }).join('');
+  const availOpts = allEntries.filter(e=>!curLinks.includes(e.val));
+  const opts = ['<option value="">— เลือกเพื่อผูกเพิ่ม —</option>'].concat(availOpts.map(e=>`<option value="${e.val}">${e.label}</option>`));
+  linkRow = `<div class="tierrow" style="flex-direction:column;align-items:flex-start;gap:4px;">
+   <span class="tierlabel">🔗 เมนูนี้เป็น Combo/โปรโมชั่นพ่วง — ผูกรายการที่ต้องตัดสต๊อกอัตโนมัติเมื่อขาย (เลือกได้หลายรายการ)</span>
+   ${chips?`<div class="linkChips">${chips}</div>`:''}
+   <select class="linkSelect" onchange="if(this.value){addComboLink('${sec.id}','${idx}',this.value);this.value='';}">${opts.join('')}</select>
+  </div>`;
  }
  const extra=`<details class="subdet"><summary>Defect / Sky Boss / PBM / Combo ▾</summary>
   <div class="tierrow"><span class="tierlabel">Defect (ของเสีย)</span>${qtyInputHtml(defK,g(defK,0))}</div>
@@ -713,7 +791,7 @@ document.getElementById('voucherQty').value=g('voucherQty',0);
 
 function recalcGrand(){
  let fb=0;
- ['lm','hm1','hm2','tpe','dessert','cafe','drinks','snack'].forEach(id=>fb+=recalcSection(id));
+ ['lm','hm1','hm2','tpe','dessert','cafe','drinks','snack','promo'].forEach(id=>fb+=recalcSection(id));
  const merch=recalcSection('merch');
  const seat=recalcSeat();
  const voucherTot=g('voucherQty',0)*140;
