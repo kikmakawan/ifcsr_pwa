@@ -1,6 +1,6 @@
 // IFCSR offline service worker — caches the app shell so it works with no internet
 // after the very first successful load (ideal for use mid-flight with no WiFi).
-const CACHE = 'ifcsr-v7';
+const CACHE = 'ifcsr-v8';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
