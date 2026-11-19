@@ -113,6 +113,8 @@ input.rcInput{width:38px!important;height:30px;text-align:center;border:1px soli
 .linkChips{display:flex;flex-wrap:wrap;gap:4px;}
 .linkChip{display:inline-flex;align-items:center;gap:4px;background:#eef6ff;color:#15539e;border:1px solid #b9d7f7;border-radius:12px;padding:3px 8px;font-size:.68rem;}
 .linkChipX{cursor:pointer;color:#c62828;font-weight:700;}
+.autoComboNote{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:6px;padding:6px 8px;font-size:.74rem;margin:2px 0 6px;}
+.autoComboMini{color:#e65100!important;}
 .b-backup{background:#eee;color:#444;text-align:center;}
 @media print{
  body.printMode > header, body.printMode > .wrap, body.printMode > .btnbar{display:none !important;}
@@ -514,7 +516,7 @@ function doSearch(q){
    rcStatusHtml = b.variance===0 ? '<span class="varianceOk">✅</span>' : (b.variance<0 ? `<span class="varianceBad">❌ ขาด ${Math.abs(b.variance)}</span>` : `<span class="varianceBad">❌ เกิน ${b.variance}</span>`);
   }
   return `<div class="searchrow">
-   <div class="searchinfo"><span class="searchname">${r.name}<span class="searchtag">${r.secName}</span></span><span class="searchmeta">Par ${r.par} · เหลือ (Crew Close) <b id="${ccId}">${b.crewCls}</b></span></div>
+   <div class="searchinfo"><span class="searchname">${r.name}<span class="searchtag">${r.secName}</span></span><span class="searchmeta">Par ${r.par} · เหลือ (Crew Close) <b id="${ccId}">${b.crewCls}</b></span>${autoComboFor(r.sid,r.idx).total>0?`<br><span class="searchmeta autoComboMini">🔗 ถูกหักอัตโนมัติจาก Combo แล้ว</span>`:''}</div>
    <div class="searchControls">
     <div class="qtygrp">
      <button type="button" class="stepbtn" onclick="searchBump('${r.sid}','${r.idx}',-1)">−</button>
@@ -591,6 +593,7 @@ function renderItemCard(sec,entry){
  const base=`${sec.id}_${idx}`;
  const actK=base+'_act', defK=base+'_def', sbK=base+'_sb', pbmK=base+'_pbm', comboK=base+'_combo', recountK=base+'_recount';
  const actualRow=`<div class="actualrow"><span class="actuallabel">① Actual <span class="actualsub">(นับของจากสต๊อกจริง)</span></span>${qtyInputHtml(actK,g(actK,0))}</div>`;
+ const autoNote=`<div class="autoComboNote" id="autonote_${base}" style="display:none;"></div>`;
  let linkRow='';
  if(canLinkCombo(sec, entry)){
   const curLinks = getComboLinks(sec.id, idx);
@@ -625,7 +628,7 @@ function renderItemCard(sec,entry){
   <div class="note" id="chk_${base}"></div>
  </details>`;
  const delBtn = entry.custom ? `<button type="button" class="delBtn" onclick="deleteCustomItem('${sec.id}','${entry.cid}')">ลบ ✕</button>` : '';
- return `<div class="itemcard"><div class="itemhead"><span class="itemname">${name}${entry.custom?' <span class="customtag">ใหม่</span>':''}</span><span class="par">Par ${par}</span>${delBtn}<span class="rowtot" id="rt_${sec.id}_${idx}">0฿</span></div>${actualRow}${rows}${extra}</div>`;
+ return `<div class="itemcard"><div class="itemhead"><span class="itemname">${name}${entry.custom?' <span class="customtag">ใหม่</span>':''}</span><span class="par">Par ${par}</span>${delBtn}<span class="rowtot" id="rt_${sec.id}_${idx}">0฿</span></div>${actualRow}${autoNote}${rows}${extra}</div>`;
 }
 
 function renderSection(sec){
@@ -704,6 +707,15 @@ function recalcSection(sid){
    }
    chkCell.innerHTML=html;
    chkCell.style.color= neg? '#e65100':'#2e7d32';
+  }
+  const autoNoteEl=document.getElementById(`autonote_${base}`);
+  if(autoNoteEl){
+   if(auto.total>0){
+    autoNoteEl.innerHTML=`🔗 หักอัตโนมัติจาก Combo ที่ผูกไว้แล้ว: <b>−${auto.total}</b> (${auto.contributions.map(c=>c.name+' x'+c.qty).join(', ')}) — ไม่ต้องกรอกเองที่ Actual`;
+    autoNoteEl.style.display='block';
+   } else {
+    autoNoteEl.innerHTML=''; autoNoteEl.style.display='none';
+   }
   }
   const ccEl=document.getElementById(`search_cc_${base}`); if(ccEl) ccEl.textContent=crewCls;
   const rcInEl=document.getElementById(`search_${base}_recount`); if(rcInEl) rcInEl.value=recount;
